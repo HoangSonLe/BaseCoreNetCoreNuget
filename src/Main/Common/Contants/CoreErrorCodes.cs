@@ -1,6 +1,5 @@
 ﻿using BaseNetCore.Core.src.Main.Common.Enums;
 using BaseNetCore.Core.src.Main.Common.Interfaces;
-using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace BaseNetCore.Core.src.Main.Common.Contants
@@ -41,6 +40,8 @@ namespace BaseNetCore.Core.src.Main.Common.Contants
             new CoreErrorCodes(ECoreErrorCode.SERVER_ERROR, "SYS006", "Có lỗi phát sinh. Vui lòng liên hệ để xử lý.");
         public static readonly CoreErrorCodes TOKEN_INVALID =
             new CoreErrorCodes(ECoreErrorCode.TOKEN_INVALID, "SYS007", "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
+        public static readonly CoreErrorCodes TOKEN_EXPIRED =
+            new CoreErrorCodes(ECoreErrorCode.TOKEN_EXPIRED, "SYS012", "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
         public static readonly CoreErrorCodes SYSTEM_AUTHORIZATION =
             new CoreErrorCodes(ECoreErrorCode.SYSTEM_AUTHORIZATION, "SYS008", "Không có quyền truy cập dữ liệu.");
         public static readonly CoreErrorCodes SERVICE_UNAVAILABLE =
@@ -68,7 +69,8 @@ namespace BaseNetCore.Core.src.Main.Common.Contants
                 { SYSTEM_AUTHORIZATION.Code, SYSTEM_AUTHORIZATION },
                 { SERVICE_UNAVAILABLE.Code, SERVICE_UNAVAILABLE },
                 { BAD_REQUEST.Code, BAD_REQUEST },
-                { TOO_MANY_REQUESTS.Code, TOO_MANY_REQUESTS }
+                { TOO_MANY_REQUESTS.Code, TOO_MANY_REQUESTS },
+                { TOKEN_EXPIRED.Code, TOKEN_EXPIRED }
             };
 
             _keyMap = new Dictionary<ECoreErrorCode, CoreErrorCodes>
@@ -83,7 +85,8 @@ namespace BaseNetCore.Core.src.Main.Common.Contants
                 { SYSTEM_AUTHORIZATION.Key, SYSTEM_AUTHORIZATION },
                 { SERVICE_UNAVAILABLE.Key, SERVICE_UNAVAILABLE },
                 { BAD_REQUEST.Key, BAD_REQUEST },
-                { TOO_MANY_REQUESTS.Key, TOO_MANY_REQUESTS }
+                { TOO_MANY_REQUESTS.Key, TOO_MANY_REQUESTS },
+                { TOKEN_EXPIRED.Key, TOKEN_EXPIRED   }
             };
 
             var missing = Enum.GetValues(typeof(ECoreErrorCode))

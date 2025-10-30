@@ -1,7 +1,13 @@
 using BaseNetCore.Core.src.Main.Middleware;
+using BaseNetCore.Core.src.Main.Security.Algorithm;
+using BaseNetCore.Core.src.Main.Security.Token;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BaseNetCore.Core.src.Main.Extensions
 {
@@ -14,23 +20,20 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// Adds all BaseNetCore features with recommended configuration:
         /// - Automatic model validation with ApiErrorResponse format
         /// - Controllers with JSON options
-        /// 
-        /// This is the recommended way to configure BaseNetCore features.
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <returns>IMvcBuilder for further MVC configuration</returns>
-        public static IMvcBuilder AddBaseNetCoreFeatures(this IServiceCollection services)
+        public static IMvcBuilder AddBaseNetCoreFeatures(this IServiceCollection services, IConfiguration configuration)
         {
+            if (services is null) throw new ArgumentNullException(nameof(services));
+
             // Add automatic model validation with ApiErrorResponse format (recommended)
             services.AddAutomaticModelValidation();
+            services.AddBaseServiceDependencies();
+            services.AddAesAlgorithmConfiguration(configuration);
 
             // Add and return MvcBuilder for further configuration
-            return services.AddControllers()
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-                options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-            });
+            return ConfigureControllers(services);
         }
 
         /// <summary>
@@ -49,24 +52,114 @@ namespace BaseNetCore.Core.src.Main.Extensions
             IConfiguration configuration,
             string tokenSettingsSectionName = "TokenSettings")
         {
+            if (services is null) throw new ArgumentNullException(nameof(services));
+            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+            if (string.IsNullOrWhiteSpace(tokenSettingsSectionName)) throw new ArgumentException("Token settings section name must be provided.", nameof(tokenSettingsSectionName));
+
             // Add JWT authentication
             services.AddJwtAuthentication(configuration, tokenSettingsSectionName);
 
+            // Auto-register application-provided ITokenValidator (if any implementation exists in loaded assemblies)
+            services.AddAutoRegisterTokenValidator();
+
+            // Add memory cache for token-related caching scenarios
+            services.AddMemoryCache();
+
             // Add base features
-            return services.AddBaseNetCoreFeatures();
+            return services.AddBaseNetCoreFeatures(configuration);
         }
 
+        /// <summary>
+        /// Registers AES algorithm and its settings.
+        /// Validates configuration immediately and registers a singleton AesAlgorithm instance.
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <param name="configuration">Configuration containing AES settings</param>
+        /// <param name="aesSettingsSectionName">Section name for AES settings (default: "Aes")</param>
+        /// <returns>IServiceCollection for chaining</returns>
+        public static IServiceCollection AddAesAlgorithmConfiguration(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            string aesSettingsSectionName = "Aes")
+        {
+            if (services is null) throw new ArgumentNullException(nameof(services));
+            if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+            if (string.IsNullOrWhiteSpace(aesSettingsSectionName)) throw new ArgumentException("AES settings section name must be provided.", nameof(aesSettingsSectionName));
+
+            // Bind settings so they are available via IOptions if needed elsewhere
+            services.Configure<AesSettings>(configuration.GetSection(aesSettingsSectionName));
+
+            // Read bound values now and fail fast if SecretKey is missing
+            var bound = configuration.GetSection(aesSettingsSectionName).Get<AesSettings>();
+            if (bound == null || string.IsNullOrWhiteSpace(bound.SecretKey))
+            {
+                throw new InvalidOperationException($"Configuration section '{aesSettingsSectionName}' is missing or does not contain a valid SecretKey. Set '{aesSettingsSectionName}:SecretKey' in configuration.");
+            }
+
+            // Register a pre-constructed singleton using the validated secret to avoid timing/order issues
+            services.AddSingleton(new AesAlgorithm(bound.SecretKey));
+
+            return services;
+        }
+
+        /// <summary>
+        /// Registers BaseService dependencies.
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <returns>Service collection for chaining</returns>
+        public static IServiceCollection AddBaseServiceDependencies(this IServiceCollection services)
+        {
+            if (services is null) throw new ArgumentNullException(nameof(services));
+
+            services.AddHttpContextAccessor();
+            return services;
+        }
+        /// <summary>
+        /// Scans loaded assemblies and auto-registers the first concrete implementation of ITokenValidator.
+        /// This allows the Application layer to implement ITokenValidator and have it picked up automatically
+        /// without explicit registrations in Program.cs.
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <returns>Service collection for chaining</returns>
+        public static IServiceCollection AddAutoRegisterTokenValidator(this IServiceCollection services)
+        {
+            if (services is null) throw new ArgumentNullException(nameof(services));
+
+            var interfaceType = typeof(ITokenValidator);
+
+            // Helper to avoid ReflectionTypeLoadException
+            static Type[] GetLoadableTypes(Assembly assembly)
+            {
+                try { return assembly.GetTypes(); }
+                catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null)!.ToArray(); }
+            }
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            var implType = assemblies
+                .SelectMany(GetLoadableTypes)
+                .Where(t => t is not null && t.IsClass && !t.IsAbstract && interfaceType.IsAssignableFrom(t))
+                .FirstOrDefault();
+
+            if (implType != null)
+            {
+                // Register only if no existing registration for the interface
+                services.TryAddScoped(interfaceType, implType);
+            }
+
+            return services;
+        }
         /// <summary>
         /// Adds BaseNetCore middleware to the application pipeline.
         /// Includes:
         /// - Global exception handling middleware
-        /// 
-        /// Note: This should be called early in the middleware pipeline.
         /// </summary>
         /// <param name="app">Application builder</param>
         /// <returns>Application builder for chaining</returns>
         public static IApplicationBuilder UseBaseNetCoreMiddleware(this IApplicationBuilder app)
         {
+            if (app is null) throw new ArgumentNullException(nameof(app));
+
             // Add global exception handling
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -79,13 +172,14 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// - Global exception handling
         /// - Authentication
         /// - Authorization
-        /// 
-        /// Note: This should be called after UseRouting() and before UseEndpoints().
+        /// Note: Should be called after UseRouting() and before UseEndpoints().
         /// </summary>
         /// <param name="app">Application builder</param>
         /// <returns>Application builder for chaining</returns>
         public static IApplicationBuilder UseBaseNetCoreMiddlewareWithAuth(this IApplicationBuilder app)
         {
+            if (app is null) throw new ArgumentNullException(nameof(app));
+
             // Add global exception handling
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -95,5 +189,19 @@ namespace BaseNetCore.Core.src.Main.Extensions
 
             return app;
         }
+
+        #region PRIVATE
+        // Private helper to centralize controller setup and JSON options to avoid duplication.
+        private static IMvcBuilder ConfigureControllers(IServiceCollection services)
+        {
+            return services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                });
+        }
+
+        #endregion
     }
 }

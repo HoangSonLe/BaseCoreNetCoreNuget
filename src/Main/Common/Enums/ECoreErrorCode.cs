@@ -39,6 +39,9 @@ namespace BaseNetCore.Core.src.Main.Common.Enums
         BAD_REQUEST,
 
         [Description("SYS011|Too Many Requests")]
-        TOO_MANY_REQUESTS
+        TOO_MANY_REQUESTS,
+
+        [Description("SYS012|Too Many Requests")]
+        TOKEN_EXPIRED,
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BaseNetCore.Core.src.Main.Security
+namespace BaseNetCore.Core.src.Main.Security.Token
 {
     /// <summary>
     /// Configuration settings for JWT token generation and validation.
@@ -8,17 +8,25 @@ namespace BaseNetCore.Core.src.Main.Security
     public class TokenSettings
     {
         /// <summary>
-        /// Secret key for signing JWT tokens. Must be at least 32 characters.
+        /// RSA Private Key in PEM format for signing JWT tokens.
         /// </summary>
         [Required]
-        [MinLength(32, ErrorMessage = "SecretKey must be at least 32 characters long")]
-        public string SecretKey { get; set; } = string.Empty;
+        public string RsaPrivateKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// RSA Public Key in PEM format for validating JWT tokens.
+        /// </summary>
+        [Required]
+        public string RsaPublicKey { get; set; } = string.Empty;
 
         /// <summary>
         /// Token expiration time in seconds. Default is 86400 (24 hours).
         /// </summary>
         [Required]
-        public string ExpireTimeS { get; set; } = "86400";
+        public string AccessExpireTimeS { get; set; } = "86400";
+
+        [Required]
+        public string RefreshExpireTimeS { get; set; } = "86400";
 
         /// <summary>
         /// Optional: Issuer claim (iss) for the token.

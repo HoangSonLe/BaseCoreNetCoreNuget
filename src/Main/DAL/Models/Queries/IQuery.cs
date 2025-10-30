@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BaseNetCore.Core.src.Main.DAL.Models.Qeries
+namespace BaseNetCore.Core.src.Main.DAL.Models.Queries
 {
     public interface IQuery<TEntity> where TEntity : class
     {

@@ -1,13 +1,15 @@
 using BaseNetCore.Core.src.Main.Common.Contants;
 using BaseNetCore.Core.src.Main.Common.Models;
-using BaseNetCore.Core.src.Main.Security;
+using BaseNetCore.Core.src.Main.Security.Token;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.Net;
-using System.Text;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace BaseNetCore.Core.src.Main.Extensions
@@ -50,12 +52,18 @@ namespace BaseNetCore.Core.src.Main.Extensions
             // Get token settings
             var tokenSettings = configuration.GetSection(sectionName).Get<TokenSettings>();
 
-            if (tokenSettings == null || string.IsNullOrEmpty(tokenSettings.SecretKey))
+            if (tokenSettings == null || string.IsNullOrEmpty(tokenSettings.RsaPublicKey))
             {
-                throw new InvalidOperationException($"TokenSettings section '{sectionName}' is not configured properly in appsettings.json");
+                throw new InvalidOperationException($"TokenSettings section '{sectionName}' is not configured properly in appsettings.json. RsaPublicKey is required.");
             }
 
-            var key = Encoding.UTF8.GetBytes(tokenSettings.SecretKey);
+            // Show detailed IdentityModel logs (PII). Only enable in development.
+            IdentityModelEventSource.ShowPII = true;
+
+            // Load RSA public key for token validation
+            var rsa = RSA.Create();
+            rsa.ImportFromPem(tokenSettings.RsaPublicKey);
+            var key = new RsaSecurityKey(rsa);
 
             // Configure JWT authentication
             services.AddAuthentication(options =>
@@ -70,7 +78,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
                               options.TokenValidationParameters = new TokenValidationParameters
                               {
                                   ValidateIssuerSigningKey = true,
-                                  IssuerSigningKey = new SymmetricSecurityKey(key),
+                                  IssuerSigningKey = key,
                                   ValidateIssuer = !string.IsNullOrEmpty(tokenSettings.Issuer),
                                   ValidIssuer = tokenSettings.Issuer,
                                   ValidateAudience = !string.IsNullOrEmpty(tokenSettings.Audience),
@@ -82,6 +90,45 @@ namespace BaseNetCore.Core.src.Main.Extensions
                               // Handle authentication events
                               options.Events = new JwtBearerEvents
                               {
+                                  // Called early: you can inspect the incoming header and token
+                                  OnMessageReceived = context =>
+                                  {
+                                      // Put a breakpoint here to inspect raw incoming token/header
+                                      // Example: var token = context.Request.Headers["Authorization"].ToString();
+                                      return Task.CompletedTask;
+                                  },
+
+                                  // Called when token is succesfully validated by the framework
+                                  OnTokenValidated = async context =>
+                                  {
+                                      string rawToken = null;
+                                      var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                                      if (!string.IsNullOrEmpty(authHeader))
+                                      {
+                                          const string bearerPrefix = "Bearer ";
+                                          rawToken = authHeader.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase)
+                                              ? authHeader.Substring(bearerPrefix.Length).Trim()
+                                              : authHeader.Trim();
+                                      }
+                                      else
+                                      {
+                                          rawToken = context.Request.Query["access_token"].FirstOrDefault();
+                                      }
+                                      // Resolve application-provided validator (registered in DI)
+                                      var validator = context.HttpContext.RequestServices.GetService(typeof(ITokenValidator))
+                                                      as ITokenValidator;
+
+                                      if (validator != null)
+                                      {
+                                          var ok = await validator.ValidateAsync(context.Principal, rawToken, context.HttpContext);
+                                          if (!ok)
+                                          {
+                                              // Mark token invalid so pipeline triggers 401/OnAuthenticationFailed
+                                              context.Fail("Token rejected by application DB validation");
+                                              return;
+                                          }
+                                      }
+                                  },
                                   OnAuthenticationFailed = context =>
                                   {
                                       context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
@@ -89,11 +136,13 @@ namespace BaseNetCore.Core.src.Main.Extensions
 
                                       var errorCode = CoreErrorCodes.TOKEN_INVALID;
 
-                                      if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                                      // Use 'is' so derived exception types are also caught
+                                      if (context.Exception is SecurityTokenExpiredException)
                                       {
                                           context.Response.Headers.Add("Token-Expired", "true");
+                                          errorCode = CoreErrorCodes.TOKEN_EXPIRED;
                                       }
-                                      else if (context.Exception.GetType() == typeof(SecurityTokenInvalidSignatureException))
+                                      else if (context.Exception is SecurityTokenInvalidSignatureException)
                                       {
                                           errorCode = CoreErrorCodes.TOKEN_INVALID;
                                       }

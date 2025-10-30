@@ -1,7 +1,7 @@
 ﻿using BaseNetCore.Core.src.Main.Common.Models;
 using System.Linq.Expressions;
 
-namespace BaseNetCore.Core.src.Main.DAL.Models.Qeries
+namespace BaseNetCore.Core.src.Main.DAL.Models.Queries
 {
     /// <summary>
     /// Base Query Object implementation

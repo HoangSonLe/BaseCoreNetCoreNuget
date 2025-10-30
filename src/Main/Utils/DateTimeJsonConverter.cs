@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BaseNetCore.Core.src.Main.Common.Models
+namespace BaseNetCore.Core.src.Main.Utils
 {
     public class DateTimeJsonConverter : JsonConverter<DateTime>
     {
