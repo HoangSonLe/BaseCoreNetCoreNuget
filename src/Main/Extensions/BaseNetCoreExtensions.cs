@@ -1,6 +1,7 @@
 using BaseNetCore.Core.src.Main.Middleware;
 using BaseNetCore.Core.src.Main.Security.Algorithm;
 using BaseNetCore.Core.src.Main.Security.Token;
+using BaseNetCore.Core.src.Main.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -60,7 +61,8 @@ namespace BaseNetCore.Core.src.Main.Extensions
             services.AddJwtAuthentication(configuration, tokenSettingsSectionName);
 
             // Auto-register application-provided ITokenValidator (if any implementation exists in loaded assemblies)
-            services.AddAutoRegisterTokenValidator();
+            //services.AddAutoRegisterTokenValidator();
+            DIUntils.AddAutoRegisterDI<ITokenValidator>(services);
 
             // Add memory cache for token-related caching scenarios
             services.AddMemoryCache();
