@@ -20,16 +20,6 @@ namespace BaseNetCore.Core.src.Main.Security.Token
         string GenerateRefreshToken(IEnumerable<Claim> claims);
 
         /// <summary>
-        /// Generates a JWT token for a user with specified user ID and optional roles.
-        /// </summary>
-        /// <param name="userId">User identifier</param>
-        /// <param name="username">Username</param>
-        /// <param name="roles">Optional collection of user roles</param>
-        /// <param name="additionalClaims">Optional additional claims</param>
-        /// <returns>JWT token string</returns>
-        string GenerateToken(string userId, string username, IEnumerable<string>? roles = null, Dictionary<string, string>? additionalClaims = null, int? expireTimeS = null);
-
-        /// <summary>
         /// Validates a JWT token and returns the claims principal.
         /// </summary>
         /// <param name="token">JWT token to validate</param>

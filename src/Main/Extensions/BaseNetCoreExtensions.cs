@@ -1,4 +1,4 @@
-using BaseNetCore.Core.src.Main.Middleware;
+using BaseNetCore.Core.src.Main.GlobalMiddleware;
 using BaseNetCore.Core.src.Main.Security.Algorithm;
 using BaseNetCore.Core.src.Main.Security.Token;
 using BaseNetCore.Core.src.Main.Utils;

@@ -17,7 +17,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
     /// <summary>
     /// Extension methods for configuring JWT authentication and token services.
     /// </summary>
-    public static class TokenServiceExtensions
+    public static class AuthenticationExtensions
     {
         /// <summary>
         /// Adds JWT token service to the service collection.

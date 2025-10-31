@@ -1,5 +1,6 @@
 ﻿using BaseNetCore.Core.src.Main.Common.Contants;
 using BaseNetCore.Core.src.Main.Common.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,13 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
         }
         public async Task InvokeAsync(HttpContext context)
         {
+            // If the endpoint is marked with [AllowAnonymous], skip permission checks entirely.
+            var endpoint = context.GetEndpoint();
+            if (endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() != null)
+            {
+                await _next(context);
+                return;
+            }
 
             var path = context.Request.Path.Value ?? "/";
             var method = context.Request.Method.ToUpperInvariant();
@@ -34,7 +42,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
                 return;
             }
             var rules = await _provider.GetRulesAsync();
-            var rule = rules.FirstOrDefault(r => r.HttpMethod == method && r.PathRegex.IsMatch(path));
+             var rule = rules.FirstOrDefault(r => r.HttpMethod == method && r.PathRegex.IsMatch(path));
             if (rule == null)
             {
                 // No dynamic rule -> continue (choose default-deny if you prefer)

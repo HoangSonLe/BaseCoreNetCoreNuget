@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text.Json;
 
-namespace BaseNetCore.Core.src.Main.Middleware
+namespace BaseNetCore.Core.src.Main.GlobalMiddleware
 {
     /// <summary>
     /// Middleware that handles unhandled exceptions globally and returns a standardized error response.

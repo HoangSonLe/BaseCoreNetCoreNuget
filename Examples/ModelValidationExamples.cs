@@ -1,4 +1,5 @@
 using BaseNetCore.Core.src.Main.Extensions;
+using BaseNetCore.Core.src.Main.GlobalMiddleware;
 using Microsoft.AspNetCore.Builder;
 
 namespace BaseNetCore.Core.Examples
@@ -38,7 +39,7 @@ namespace BaseNetCore.Core.Examples
 
             // Don't forget to add GlobalExceptionMiddleware
             var app = builder.Build();
-            app.UseMiddleware<BaseNetCore.Core.src.Main.Middleware.GlobalExceptionMiddleware>();
+            app.UseMiddleware<GlobalExceptionMiddleware>();
 
             app.Run();
         }

@@ -1,4 +1,6 @@
-﻿namespace BaseNetCore.Core.src.Main.Security.Permission
+﻿using BaseNetCore.Core.src.Main.Security.Permission.Models;
+
+namespace BaseNetCore.Core.src.Main.Security.Permission
 {
     public interface IDynamicPermissionProvider
     {

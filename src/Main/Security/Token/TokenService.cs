@@ -74,33 +74,6 @@ namespace BaseNetCore.Core.src.Main.Security.Token
             return GenerateToken(claims, int.TryParse(_tokenSettings.RefreshExpireTimeS, out var seconds) ? seconds : (int?)null);
         }
 
-
-        /// <inheritdoc/>
-        public string GenerateToken(string userId, string username, IEnumerable<string>? roles = null, Dictionary<string, string>? additionalClaims = null, int? expireTimeS = null)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Name, username),
-                new Claim(JwtRegisteredClaimNames.Sub, userId),
-                // do not pre-generate JTI here - GenerateToken will ensure it if missing
-            };
-
-            // Add roles
-            if (roles != null)
-            {
-                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-            }
-
-            // Add additional claims
-            if (additionalClaims != null)
-            {
-                claims.AddRange(additionalClaims.Select(kvp => new Claim(kvp.Key, kvp.Value)));
-            }
-
-            return GenerateToken(claims, expireTimeS);
-        }
-
         /// <inheritdoc/>
         public ClaimsPrincipal? ValidateToken(string token)
         {
