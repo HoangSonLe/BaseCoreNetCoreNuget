@@ -67,8 +67,6 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
                 var perms = await _userPermissionService.GetPermissionsAsync(userId);
                 foreach (var p in perms) userPerms.Add(p);
             }
-            // also include permission claims if present
-            foreach (var c in context.User.FindAll("permission")) userPerms.Add(c.Value);
 
             var ok = rule.RequiredPermissions.Count == 0 || rule.RequiredPermissions.Any(rp => userPerms.Contains(rp));
             if (!ok)

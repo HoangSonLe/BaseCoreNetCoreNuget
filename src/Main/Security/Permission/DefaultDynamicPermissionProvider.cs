@@ -62,9 +62,21 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
             var perms = permsPart.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                 .Select(p => NormalizePermissionToken(p))
                                 .ToArray();
-            var escaped = Regex.Escape(pathPattern);
-            escaped = escaped.Replace(@"\{REGEX\}", "(.+)");
+
+            // Ensure replacement of the {REGEX} token happens before escaping.
+            // Escaping then searching for an escaped token can be brittle across build/package boundaries.
+            const string token = "{REGEX}";
+            const string placeholder = "__DYNAMIC_REGEX_PLACEHOLDER__";
+
+            var preprocessed = pathPattern.Replace(token, placeholder);
+            var escaped = Regex.Escape(preprocessed);
+
+            // Replace the escaped placeholder with the runtime regex group
+            escaped = escaped.Replace(Regex.Escape(placeholder), "(.+)");
+
+            // Convert wildcard markers to regex (escaped '*' becomes '\*')
             escaped = escaped.Replace(@"\*", "[^/]+");
+
             var regexPattern = "^" + escaped + "$";
             var regex = new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
