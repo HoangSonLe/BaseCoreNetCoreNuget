@@ -1,33 +1,33 @@
-# JWT v?i RSA Algorithm - H??ng d?n s? d?ng
+# JWT vá»›i RSA Algorithm - HÆ°á»›ng dáº«n sáº½ d?ng
 
-D? án ?ã ???c c?p nh?t ?? s? d?ng thu?t toán **RSA256** thay vì HMAC-SHA256 cho JWT tokens.
+D? Ã¡n ?Ã£ ???c c?p nh?t ?? sáº½ d?ng thu?t toÃ¡n **RSA256** thay vÃ¬ HMAC-SHA256 cho JWT tokens.
 
-## Thay ??i chính
+## Thay ??i chÃ­nh
 
 ### 1. TokenSettings
 - **Lo?i b?**: `SecretKey` (symmetric key)
-- **Thêm m?i**: 
-  - `RsaPrivateKey`: Private key dùng ?? ký token (PEM format)
-  - `RsaPublicKey`: Public key dùng ?? xác th?c token (PEM format)
+- **ThÃªm m?i**: 
+  - `RsaPrivateKey`: Private key dÃ¹ng ?? kÃ½ token (PEM format)
+  - `RsaPublicKey`: Public key dÃ¹ng ?? xÃ¡c th?c token (PEM format)
 
 ### 2. TokenService
-- S? d?ng `RSA.Create()` và `RsaSecurityKey` thay vì `SymmetricSecurityKey`
-- Thu?t toán: `SecurityAlgorithms.RsaSha256` thay vì `SecurityAlgorithms.HmacSha256`
+- S? d?ng `RSA.Create()` vÃ  `RsaSecurityKey` thay vÃ¬ `SymmetricSecurityKey`
+- Thu?t toÃ¡n: `SecurityAlgorithms.RsaSha256` thay vÃ¬ `SecurityAlgorithms.HmacSha256`
 
 ### 3. TokenServiceExtensions
-- C?p nh?t `AddJwtAuthentication` ?? s? d?ng RSA public key
+- C?p nh?t `AddJwtAuthentication` ?? sáº½ d?ng RSA public key
 
-## T?o RSA Key Pair
+## Táº¡o RSA Key Pair
 
-### Cách 1: S? d?ng RsaKeyGenerator (Khuy?n ngh?)
+### CÃ¡ch 1: S? d?ng RsaKeyGenerator (Khuy?n ngh?)
 
 ```csharp
 using BaseNetCore.Core.src.Main.Security;
 
-// In ra c?u hình m?u v?i keys m?i
+// In ra cáº¥u hÃ¬nh m?u vá»›i keys m?i
 RsaKeyGenerator.PrintSampleConfiguration(2048);
 
-// Ho?c ch? t?o key pair
+// Ho?c ch? táº¡o key pair
 var (privateKey, publicKey) = RsaKeyGenerator.GenerateKeyPair(2048);
 Console.WriteLine("Private Key:");
 Console.WriteLine(privateKey);
@@ -35,13 +35,13 @@ Console.WriteLine("\nPublic Key:");
 Console.WriteLine(publicKey);
 ```
 
-### Cách 2: S? d?ng OpenSSL
+### CÃ¡ch 2: S? d?ng OpenSSL
 
 ```bash
-# T?o private key (2048 bit)
+# Táº¡o private key (2048 bit)
 openssl genrsa -out private_key.pem 2048
 
-# T?o public key t? private key
+# Táº¡o public key t? private key
 openssl rsa -in private_key.pem -pubout -out public_key.pem
 
 # Xem n?i dung keys
@@ -49,10 +49,10 @@ cat private_key.pem
 cat public_key.pem
 ```
 
-### Cách 3: S? d?ng PowerShell (Windows)
+### CÃ¡ch 3: S? d?ng PowerShell (Windows)
 
 ```powershell
-# T?o RSA key pair
+# Táº¡o RSA key pair
 $rsa = [System.Security.Cryptography.RSA]::Create(2048)
 
 # Export private key
@@ -69,13 +69,13 @@ Write-Host "`nPublic Key:"
 Write-Host $publicKey
 ```
 
-## C?u hình appsettings.json
+## Cáº¥u hÃ¬nh appsettings.json
 
 ```json
 {
   "TokenSettings": {
-    "RsaPrivateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
-    "RsaPublicKey": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA...\n-----END RSA PUBLIC KEY-----",
+    "RsaPrivateKey": "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAKCAQEA...\n-----END PRIVATE KEY-----",
+    "RsaPublicKey": "-----BEGIN PUBLIC KEY-----\nMIIBCgKCAQEA...\n-----END PUBLIC KEY-----",
     "ExpireTimeS": "3600",
     "Issuer": "your-app-name",
     "Audience": "your-app-audience"
@@ -83,10 +83,10 @@ Write-Host $publicKey
 }
 ```
 
-**L?u ý quan tr?ng:**
-- Thay th? `\n` cho m?i dòng m?i trong PEM format
-- Private key ph?i ???c b?o m?t tuy?t ??i
-- Ch? public key có th? ???c chia s? công khai
+**LÆ°u Ã½ quan tr?ng:**
+- Thay th? `\n` cho m?i dÃ²ng m?i trong PEM format
+- Private key ph?i ???c b?o má»™t tuy?t ??i
+- Ch? public key cÃ³ th? ???c chia sáº½ cÃ´ng khai
 
 ## S? d?ng trong Startup/Program.cs
 
@@ -95,7 +95,7 @@ using BaseNetCore.Core.src.Main.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Thêm JWT authentication v?i RSA
+// ThÃªm JWT authentication vá»›i RSA
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
@@ -106,7 +106,7 @@ app.UseAuthorization();
 app.Run();
 ```
 
-## Ví d? s? d?ng TokenService
+## VÃ­ d? sáº½ d?ng TokenService
 
 ```csharp
 public class AuthController : ControllerBase
@@ -121,15 +121,15 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
-        // Xác th?c user...
+        // XÃ¡c th?c user...
         var userId = "123";
         var username = "john.doe";
     var roles = new[] { "Admin", "User" };
 
-    // T?o JWT token v?i RSA
+    // Táº¡o JWT token vá»›i RSA
         var token = _tokenService.GenerateToken(userId, username, roles);
    
-        // T?o refresh token
+        // Táº¡o refresh token
     var refreshToken = _tokenService.GenerateRefreshToken();
 
         return Ok(new
@@ -156,32 +156,32 @@ public class AuthController : ControllerBase
 }
 ```
 
-## ?u ?i?m c?a RSA so v?i HMAC
+## ?u ?i?m c?a RSA so vá»›i HMAC
 
-1. **B?o m?t cao h?n**: 
-   - Private key ch? ???c s? d?ng ?? ký token
-   - Public key có th? ???c chia s? ?? xác th?c token
-   - Phù h?p cho ki?n trúc microservices
+1. **B?o má»™t cao h?n**: 
+   - Private key ch? ???c sáº½ d?ng ?? kÃ½ token
+   - Public key cÃ³ th? ???c chia sáº½ ?? xÃ¡c th?c token
+   - PhÃ¹ h?p cho ki?n trÃºc microservices
 
-2. **Phân tán t?t h?n**:
-   - Các service khác ch? c?n public key ?? xác th?c
-   - Không c?n chia s? secret key gi?a các service
+2. **PhÃ¢n tÃ¡n t?t h?n**:
+   - CÃ¡c service khÃ¡c ch? c?n public key ?? xÃ¡c th?c
+   - KhÃ´ng c?n chia sáº½ secret key gi?a cÃ¡c service
 
-3. **Tuân th? tiêu chu?n**:
-   - RSA là tiêu chu?n công nghi?p
-   - H? tr? t?t cho OAuth 2.0 và OpenID Connect
+3. **TuÃ¢n th? tiÃªu chu?n**:
+   - RSA lÃ  tiÃªu chu?n cÃ´ng nghi?p
+   - H? tr? t?t cho OAuth 2.0 vÃ  OpenID Connect
 
-## L?u ý b?o m?t
+## LÆ°u Ã½ b?o má»™t
 
 1. **Private Key**:
-   - Không commit vào source control
+   - KhÃ´ng commit vÃ o source control
    - S? d?ng Azure Key Vault, AWS Secrets Manager, ho?c t??ng t?
    - Rotate ??nh k?
 
 2. **Key Size**:
-   - T?i thi?u: 2048 bit
+   - T?i thiá»‡u: 2048 bit
    - Khuy?n ngh?: 2048-4096 bit
-   - Càng l?n càng b?o m?t nh?ng ch?m h?n
+   - CÃ ng l?n cÃ ng b?o má»™t nh?ng ch?m h?n
 
 3. **Environment Variables** (Production):
 ```bash
@@ -192,14 +192,14 @@ export TokenSettings__RsaPublicKey="$(cat public_key.pem)"
 ## Troubleshooting
 
 ### L?i: "PEM format is not valid"
-- Ki?m tra format c?a key ph?i b?t ??u v?i `-----BEGIN RSA ...-----`
-- ??m b?o `\n` ???c s? d?ng cho newlines trong JSON
+- Ki?m tra format c?a key ph?i b?t ??u vá»›i `-----BEGIN ...-----`
+- ??m b?o `\n` ???c sáº½ d?ng cho newlines trong JSON
 
 ### L?i: "Token validation failed"
-- Ki?m tra public key ?úng v?i private key ?ã dùng ?? ký
-- Ki?m tra Issuer và Audience n?u ?ã c?u hình
+- Ki?m tra public key ?Ãºng vá»›i private key ?Ã£ dÃ¹ng ?? kÃ½
+- Ki?m tra Issuer vÃ  Audience n?u ?Ã£ cáº¥u hÃ¬nh
 - Ki?m tra token ch?a h?t h?n
 
 ### Performance Issue
-- RSA ch?m h?n HMAC, nh?ng ch? ?áng k? khi x? lý hàng nghìn token/giây
-- N?u c?n performance cao, cân nh?c cache token validation results
+- RSA ch?m h?n HMAC, nh?ng ch? ?Ã¡ng k? khi x? lÃ½ hÃ ng nghÃ¬n token/giÃ¢y
+- N?u c?n performance cao, cÃ¢n nh?c cache token validation results
