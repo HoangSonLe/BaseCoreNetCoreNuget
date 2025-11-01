@@ -42,7 +42,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
                 return;
             }
             var rules = await _provider.GetRulesAsync();
-             var rule = rules.FirstOrDefault(r => r.HttpMethod == method && r.PathRegex.IsMatch(path));
+            var rule = rules.FirstOrDefault(r => r.HttpMethod == method && r.PathRegex.IsMatch(path));
             if (rule == null)
             {
                 // No dynamic rule -> continue (choose default-deny if you prefer)

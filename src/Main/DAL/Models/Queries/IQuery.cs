@@ -1,10 +1,5 @@
 ﻿using BaseNetCore.Core.src.Main.Common.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BaseNetCore.Core.src.Main.DAL.Models.Queries
 {

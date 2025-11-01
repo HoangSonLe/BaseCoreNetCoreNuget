@@ -1,8 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace BaseNetCore.Core.src.Main.Security.Algorithm
 {

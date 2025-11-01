@@ -68,120 +68,120 @@ namespace BaseNetCore.Core.Examples
             public ProductOutOfStockException(string productName)
        : base(ProductErrorCodes.PRODUCT_OUT_OF_STOCK, $"Sản phẩm '{productName}' đã hết hàng", HttpStatusCode.Conflict)
             {
-     }
+            }
         }
 
-     /// <summary>
- /// Example 3: Using custom error codes in services
- /// </summary>
+        /// <summary>
+        /// Example 3: Using custom error codes in services
+        /// </summary>
         internal class ProductService
-   {
-    public void ValidateProduct(int productId, decimal price, int stock)
+        {
+            public void ValidateProduct(int productId, decimal price, int stock)
             {
-     // Use custom exceptions
-     if (productId <= 0)
-   throw new ProductNotFoundException(productId);
+                // Use custom exceptions
+                if (productId <= 0)
+                    throw new ProductNotFoundException(productId);
 
-         if (price <= 0)
-               throw new BaseApplicationException(
-            ProductErrorCodes.PRODUCT_PRICE_INVALID,
-     $"Giá sản phẩm {price} không hợp lệ. Giá phải lớn hơn 0.",
-          HttpStatusCode.BadRequest);
+                if (price <= 0)
+                    throw new BaseApplicationException(
+                 ProductErrorCodes.PRODUCT_PRICE_INVALID,
+          $"Giá sản phẩm {price} không hợp lệ. Giá phải lớn hơn 0.",
+               HttpStatusCode.BadRequest);
 
-          if (stock <= 0)
-        throw new ProductOutOfStockException("iPhone 15 Pro");
-     }
-      }
+                if (stock <= 0)
+                    throw new ProductOutOfStockException("iPhone 15 Pro");
+            }
+        }
 
         /// <summary>
         /// Example 4: Define error codes for different modules
         /// </summary>
-   internal class OrderErrorCodes : IErrorCode
+        internal class OrderErrorCodes : IErrorCode
         {
             public string Code { get; }
-   public string Message { get; }
+            public string Message { get; }
 
-   private OrderErrorCodes(string code, string message)
+            private OrderErrorCodes(string code, string message)
             {
                 Code = code;
-         Message = message;
-   }
+                Message = message;
+            }
 
-     public static readonly OrderErrorCodes ORDER_NOT_FOUND =
-        new OrderErrorCodes("ORD001", "Đơn hàng không tồn tại");
+            public static readonly OrderErrorCodes ORDER_NOT_FOUND =
+               new OrderErrorCodes("ORD001", "Đơn hàng không tồn tại");
 
-      public static readonly OrderErrorCodes ORDER_ALREADY_CANCELLED =
-    new OrderErrorCodes("ORD002", "Đơn hàng đã bị hủy");
+            public static readonly OrderErrorCodes ORDER_ALREADY_CANCELLED =
+          new OrderErrorCodes("ORD002", "Đơn hàng đã bị hủy");
 
-       public static readonly OrderErrorCodes ORDER_CANNOT_CANCEL =
-        new OrderErrorCodes("ORD003", "Không thể hủy đơn hàng đang giao");
+            public static readonly OrderErrorCodes ORDER_CANNOT_CANCEL =
+             new OrderErrorCodes("ORD003", "Không thể hủy đơn hàng đang giao");
         }
 
         /// <summary>
         /// Example 5: User management error codes
- /// </summary>
+        /// </summary>
         internal class UserErrorCodes : IErrorCode
-      {
-    public string Code { get; }
-         public string Message { get; }
+        {
+            public string Code { get; }
+            public string Message { get; }
 
-   private UserErrorCodes(string code, string message)
+            private UserErrorCodes(string code, string message)
             {
-     Code = code;
-     Message = message;
-  }
+                Code = code;
+                Message = message;
+            }
 
             public static readonly UserErrorCodes USER_NOT_FOUND =
       new UserErrorCodes("USR001", "Người dùng không tồn tại");
 
-        public static readonly UserErrorCodes USER_EMAIL_EXISTS =
-   new UserErrorCodes("USR002", "Email đã được sử dụng");
+            public static readonly UserErrorCodes USER_EMAIL_EXISTS =
+       new UserErrorCodes("USR002", "Email đã được sử dụng");
 
-        public static readonly UserErrorCodes USER_INACTIVE =
-    new UserErrorCodes("USR003", "Tài khoản đã bị vô hiệu hóa");
+            public static readonly UserErrorCodes USER_INACTIVE =
+        new UserErrorCodes("USR003", "Tài khoản đã bị vô hiệu hóa");
 
-   public static readonly UserErrorCodes USER_PASSWORD_INVALID =
-          new UserErrorCodes("USR004", "Mật khẩu không đúng");
-      }
+            public static readonly UserErrorCodes USER_PASSWORD_INVALID =
+                   new UserErrorCodes("USR004", "Mật khẩu không đúng");
+        }
 
         /// <summary>
         /// Example 6: Using with Controllers
         /// </summary>
-   [Microsoft.AspNetCore.Mvc.ApiController]
-      [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
+        [Microsoft.AspNetCore.Mvc.ApiController]
+        [Microsoft.AspNetCore.Mvc.Route("api/[controller]")]
         internal class ProductsController : Microsoft.AspNetCore.Mvc.ControllerBase
         {
-         [Microsoft.AspNetCore.Mvc.HttpGet("{id}")]
+            [Microsoft.AspNetCore.Mvc.HttpGet("{id}")]
             public Microsoft.AspNetCore.Mvc.IActionResult GetProduct(int id)
- {
-        if (id <= 0)
-       throw new ProductNotFoundException(id);
+            {
+                if (id <= 0)
+                    throw new ProductNotFoundException(id);
 
                 // ... business logic
 
-     return Ok(new { Id = id, Name = "Product" });
-  }
+                return Ok(new { Id = id, Name = "Product" });
+            }
 
-    [Microsoft.AspNetCore.Mvc.HttpPost]
-        public Microsoft.AspNetCore.Mvc.IActionResult CreateProduct([Microsoft.AspNetCore.Mvc.FromBody] CreateProductDto dto)
-    {
-         // Check duplicate
-             bool exists = false; // ... check logic
-  if (exists)
-           throw new BaseApplicationException(
-        ProductErrorCodes.PRODUCT_DUPLICATE,
-       $"Sản phẩm '{dto.Name}' đã tồn tại",
-         HttpStatusCode.Conflict);
+            [Microsoft.AspNetCore.Mvc.HttpPost]
+            public Microsoft.AspNetCore.Mvc.IActionResult CreateProduct([Microsoft.AspNetCore.Mvc.FromBody] CreateProductDto dto)
+            {
+                // Check duplicate
+                bool exists = false; // ... check logic
+                if (exists)
+                    throw new BaseApplicationException(
+                 ProductErrorCodes.PRODUCT_DUPLICATE,
+                $"Sản phẩm '{dto.Name}' đã tồn tại",
+                  HttpStatusCode.Conflict);
 
-      // Validate price
-if (dto.Price <= 0)
-     throw new BaseApplicationException(
-   ProductErrorCodes.PRODUCT_PRICE_INVALID,
-    "Giá sản phẩm phải lớn hơn 0",
-        HttpStatusCode.BadRequest);
+                // Validate price
+                if (dto.Price <= 0)
+                    throw new BaseApplicationException(
+                  ProductErrorCodes.PRODUCT_PRICE_INVALID,
+                   "Giá sản phẩm phải lớn hơn 0",
+                       HttpStatusCode.BadRequest);
 
-     return CreatedAtAction(nameof(GetProduct), new { id = 1 }, dto);
-   }
+                return CreatedAtAction(nameof(GetProduct), new { id = 1 }, dto);
+            }
         }
 
         internal class CreateProductDto
@@ -193,47 +193,47 @@ if (dto.Price <= 0)
     }
 
     /// <summary>
-  /// Example API responses with custom error codes
+    /// Example API responses with custom error codes
     /// </summary>
     internal class CustomErrorResponseExamples
     {
         /// <summary>
-   /// Response when product not found (HTTP 404):
+        /// Response when product not found (HTTP 404):
         /// {
         ///   "guid": "abc-123",
-  ///   "code": "PRD001",
+        ///   "code": "PRD001",
         ///   "message": "Sản phẩm 999 không tồn tại",
- ///   "path": "/api/products/999",
+        ///   "path": "/api/products/999",
         ///   "method": "GET",
         ///   "timestamp": "2025-01-28T10:30:00Z"
         /// }
-     /// </summary>
+        /// </summary>
         public void ProductNotFoundResponse() { }
 
         /// <summary>
         /// Response when product out of stock (HTTP 409):
-   /// {
+        /// {
         ///   "guid": "abc-123",
-   ///   "code": "PRD002",
-   ///   "message": "Sản phẩm 'iPhone 15 Pro' đã hết hàng",
+        ///   "code": "PRD002",
+        ///   "message": "Sản phẩm 'iPhone 15 Pro' đã hết hàng",
         ///   "path": "/api/orders",
-     ///   "method": "POST",
+        ///   "method": "POST",
         ///   "timestamp": "2025-01-28T10:30:00Z"
-  /// }
-  /// </summary>
-      public void ProductOutOfStockResponse() { }
+        /// }
+        /// </summary>
+        public void ProductOutOfStockResponse() { }
 
-   /// <summary>
+        /// <summary>
         /// Response when user email exists (HTTP 409):
-    /// {
-    ///   "guid": "abc-123",
-      ///   "code": "USR002",
+        /// {
+        ///   "guid": "abc-123",
+        ///   "code": "USR002",
         ///   "message": "Email đã được sử dụng",
         /// "path": "/api/users",
-  ///   "method": "POST",
+        ///   "method": "POST",
         ///   "timestamp": "2025-01-28T10:30:00Z"
-     /// }
-   /// </summary>
+        /// }
+        /// </summary>
         public void UserEmailExistsResponse() { }
     }
 }

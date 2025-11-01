@@ -1,6 +1,5 @@
 ﻿using BaseNetCore.Core.src.Main.Utils;
 using Swashbuckle.AspNetCore.Annotations;
-using System;
 using System.Text.Json.Serialization;
 
 namespace BaseNetCore.Core.src.Main.Common.Models

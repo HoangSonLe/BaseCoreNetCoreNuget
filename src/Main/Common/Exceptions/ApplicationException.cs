@@ -83,8 +83,8 @@ namespace BaseNetCore.Core.src.Main.Common.Exceptions
         public ConflictException(string message) : base(CoreErrorCodes.CONFLICT, message, HttpStatusCode.Conflict)
         {
         }
-    /// <summary>
-    /// Exception for forbidden access (HTTP 403).
+        /// <summary>
+        /// Exception for forbidden access (HTTP 403).
     }
 
     /// </summary>

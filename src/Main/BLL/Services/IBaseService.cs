@@ -8,15 +8,15 @@ namespace BaseNetCore.Core.src.Main.BLL.Services
     /// <typeparam name="TEntity">Entity type that inherits from BaseAuditableEntity</typeparam>
     public interface IBaseService<TEntity> where TEntity : BaseAuditableEntity
     {
- #region User Context
+        #region User Context
 
         /// <summary>
-      /// Gets the current user ID from JWT token.
+        /// Gets the current user ID from JWT token.
         /// Returns 1 (system user) if not authenticated.
         /// </summary>
-   int CurrentUserId { get; }
+        int CurrentUserId { get; }
 
-  /// <summary>
+        /// <summary>
         /// Gets the current username from JWT token.
         /// </summary>
         string? CurrentUsername { get; }

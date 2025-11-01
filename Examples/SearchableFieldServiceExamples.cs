@@ -1,6 +1,4 @@
-﻿using BaseNetCore.Core.Examples;
-using BaseNetCore.Core.src.Main.Common.Attributes;
-using BaseNetCore.Core.src.Main.Common.Models;
+﻿using BaseNetCore.Core.src.Main.Common.Models;
 using BaseNetCore.Core.src.Main.DAL.Models.Entities;
 using BaseNetCore.Core.src.Main.DAL.Models.Specification;
 using BaseNetCore.Core.src.Main.DAL.Repository;
@@ -21,7 +19,7 @@ namespace BaseNetCore.Core.Examples
         public ProductService(IRepository<Product> productRepo, IUnitOfWork unitOfWork)
         {
             _productRepo = productRepo;
-         _unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;
         }
 
         #region CRUD Operations with Opt-in Search String Generation
@@ -278,13 +276,13 @@ namespace BaseNetCore.Core.Examples
     /// </summary>
     internal class CustomerService
     {
- private readonly IRepository<Customer> _customerRepo;
-     private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<Customer> _customerRepo;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CustomerService(IRepository<Customer> customerRepo, IUnitOfWork unitOfWork)
- {
-  _customerRepo = customerRepo;
-     _unitOfWork = unitOfWork;
+        {
+            _customerRepo = customerRepo;
+            _unitOfWork = unitOfWork;
         }
 
         /// <summary>
@@ -342,10 +340,10 @@ namespace BaseNetCore.Core.Examples
     /// DTO for customer suggestions
     /// </summary>
     internal class CustomerSuggestion
-  {
-     public Guid Id { get; set; }
-     public string FullName { get; set; }
- public string Email { get; set; }
+    {
+        public Guid Id { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
         public string PhoneNumber { get; set; }
     }
 
@@ -360,28 +358,28 @@ namespace BaseNetCore.Core.Examples
         {
             var normalized = SearchFieldUtils.NormalizeSearchText(searchTerm);
 
-  WithCriteria(p => p.NonUnicodeSearchString.Contains(normalized));
+            WithCriteria(p => p.NonUnicodeSearchString.Contains(normalized));
             WithOrderBy(p => p.Name);
         }
-  }
+    }
 
     /// <summary>
     /// Example: Complex search specification with multiple filters
     /// </summary>
     internal class ProductSearchSpec : BaseSpecification<Product>
     {
-  public ProductSearchSpec(
-     string searchTerm,
-           string category = null,
-         string brand = null,
-    decimal? minPrice = null,
-         decimal? maxPrice = null,
-  bool activeOnly = true)
-  {
-      // Base search criteria
-      if (!string.IsNullOrWhiteSpace(searchTerm))
-      {
-        var normalized = SearchFieldUtils.NormalizeSearchText(searchTerm);
+        public ProductSearchSpec(
+           string searchTerm,
+                 string category = null,
+               string brand = null,
+          decimal? minPrice = null,
+               decimal? maxPrice = null,
+        bool activeOnly = true)
+        {
+            // Base search criteria
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var normalized = SearchFieldUtils.NormalizeSearchText(searchTerm);
                 WithCriteria(p => p.NonUnicodeSearchString.Contains(normalized));
             }
 
@@ -426,14 +424,14 @@ namespace BaseNetCore.Core.Examples
     /// </summary>
     internal class OrderService
     {
-  private readonly IRepository<SalesOrder> _orderRepo;
+        private readonly IRepository<SalesOrder> _orderRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public OrderService(IRepository<SalesOrder> orderRepo, IUnitOfWork unitOfWork)
         {
-      _orderRepo = orderRepo;
-     _unitOfWork = unitOfWork;
-     }
+            _orderRepo = orderRepo;
+            _unitOfWork = unitOfWork;
+        }
 
         /// <summary>
         /// Create order - NO search string generation
@@ -487,9 +485,9 @@ namespace BaseNetCore.Core.Examples
     /// </summary>
     internal class ECommerceService
     {
-     private readonly IRepository<Product> _productRepo;
+        private readonly IRepository<Product> _productRepo;
         private readonly IRepository<SalesOrder> _orderRepo;
-   private readonly IRepository<Customer> _customerRepo;
+        private readonly IRepository<Customer> _customerRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public ECommerceService(
@@ -498,9 +496,9 @@ namespace BaseNetCore.Core.Examples
                  IRepository<Customer> customerRepo,
           IUnitOfWork unitOfWork)
         {
-       _productRepo = productRepo;
+            _productRepo = productRepo;
             _orderRepo = orderRepo;
-          _customerRepo = customerRepo;
+            _customerRepo = customerRepo;
             _unitOfWork = unitOfWork;
         }
 
@@ -599,14 +597,14 @@ namespace BaseNetCore.Core.Examples
     /// <summary>
     /// SalesOrder entity WITHOUT [SearchableEntity] attribute
     /// High-volume transactional data that doesn't need full-text search
- /// </summary>
+    /// </summary>
     internal class SalesOrder : BaseAuditableEntity
     {
- public int Id { get; set; }
+        public int Id { get; set; }
         public string OrderNumber { get; set; }
-    public decimal TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; }
         public DateTime OrderDate { get; set; }
-      public Guid CustomerId { get; set; }
+        public Guid CustomerId { get; set; }
 
         // ❌ No NonUnicodeSearchString property
         // ❌ No search string generation overhead
@@ -623,7 +621,7 @@ namespace BaseNetCore.Core.Examples
         public int Id { get; set; }
         public int OrderId { get; set; }
         public int ProductId { get; set; }
-   public int Quantity { get; set; }
+        public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
 
         // ❌ No search support needed

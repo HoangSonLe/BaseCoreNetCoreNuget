@@ -1,5 +1,3 @@
-using System;
-
 namespace BaseNetCore.Core.src.Main.Common.Attributes
 {
     /// <summary>

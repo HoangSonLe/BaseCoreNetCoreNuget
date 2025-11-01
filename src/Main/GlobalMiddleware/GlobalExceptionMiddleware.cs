@@ -28,7 +28,7 @@ namespace BaseNetCore.Core.src.Main.GlobalMiddleware
             }
             catch (Exception ex)
             {
-               await HandleExceptionAsync(context, ex, context.TraceIdentifier);
+                await HandleExceptionAsync(context, ex, context.TraceIdentifier);
             }
         }
 

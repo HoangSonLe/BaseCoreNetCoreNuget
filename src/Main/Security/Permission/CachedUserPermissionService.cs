@@ -4,7 +4,7 @@ using System.Text;
 
 namespace BaseNetCore.Core.src.Main.Security.Permission
 {
-    public  class CachedUserPermissionService : IUserPermissionService
+    public class CachedUserPermissionService : IUserPermissionService
     {
         private readonly ICorePermissionService _permissionService;
         private readonly IDistributedCache _cache;
@@ -24,7 +24,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
         }
         public async Task<IReadOnlyList<string>> GetPermissionsAsync(string userId)
         {
-            if(string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId))
             {
                 return Array.Empty<string>();
             }

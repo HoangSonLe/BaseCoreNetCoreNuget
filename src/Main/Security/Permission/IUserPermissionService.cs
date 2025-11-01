@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace BaseNetCore.Core.src.Main.Security.Permission
 {
     public interface IUserPermissionService
