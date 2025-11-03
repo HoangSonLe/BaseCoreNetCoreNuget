@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+﻿using BaseNetCore.Core.src.Main.Cache;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
@@ -7,7 +8,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
     public class CachedUserPermissionService : IUserPermissionService
     {
         private readonly ICorePermissionService _permissionService;
-        private readonly IDistributedCache _cache;
+        private readonly ICacheService _cache;
         private readonly ILogger<CachedUserPermissionService> _logger;
         private static readonly DistributedCacheEntryOptions _cacheOptions = new DistributedCacheEntryOptions()
         {
@@ -15,7 +16,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
         };
         public CachedUserPermissionService(
             ICorePermissionService permissionRepository,
-            IDistributedCache cache,
+            ICacheService cache,
             ILogger<CachedUserPermissionService> logger)
         {
             _permissionService = permissionRepository;
@@ -29,10 +30,10 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
                 return Array.Empty<string>();
             }
 
-            var cacheKey = $"perms:{userId}";
+            string cacheKey = $"perms:{userId}";
             try
             {
-                var cachedData = await _cache.GetAsync(cacheKey);
+                byte[]? cachedData = await _cache.GetAsync<byte[]>(cacheKey);
                 if (cachedData != null)
                 {
                     var cachedJson = Encoding.UTF8.GetString(cachedData);
@@ -54,7 +55,7 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
             {
                 var json = System.Text.Json.JsonSerializer.Serialize(permsList);
                 var data = Encoding.UTF8.GetBytes(json);
-                await _cache.SetAsync(cacheKey, data, _cacheOptions);
+                await _cache.SetAsync(cacheKey, data, _cacheOptions.AbsoluteExpirationRelativeToNow);
             }
             catch (Exception ex)
             {

@@ -17,7 +17,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddAutomaticModelValidation(this IServiceCollection services)
+        public static IServiceCollection AddBaseAutomaticModelValidation(this IServiceCollection services)
         {
             services.Configure<ApiBehaviorOptions>(options =>
               {
@@ -55,7 +55,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddModelValidationWithException(this IServiceCollection services)
+        public static IServiceCollection AddBaseModelValidationWithException(this IServiceCollection services)
         {
             services.Configure<ApiBehaviorOptions>(options =>
               {

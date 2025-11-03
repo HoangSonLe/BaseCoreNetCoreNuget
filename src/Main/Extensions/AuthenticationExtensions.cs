@@ -25,7 +25,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// <param name="configuration">Configuration</param>
         /// <param name="sectionName">Configuration section name (default: "TokenSettings")</param>
         /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddTokenService(this IServiceCollection services, IConfiguration configuration, string sectionName = "TokenSettings")
+        public static IServiceCollection AddBaseTokenService(this IServiceCollection services, IConfiguration configuration, string sectionName = "TokenSettings")
         {
             // Bind and validate TokenSettings
             services.Configure<TokenSettings>(configuration.GetSection(sectionName));
@@ -43,10 +43,10 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// <param name="configuration">Configuration</param>
         /// <param name="sectionName">Configuration section name (default: "TokenSettings")</param>
         /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration, string sectionName = "TokenSettings")
+        public static IServiceCollection AddBaseJwtAuthentication(this IServiceCollection services, IConfiguration configuration, string sectionName = "TokenSettings")
         {
             // Add token service first
-            services.AddTokenService(configuration, sectionName);
+            services.AddBaseTokenService(configuration, sectionName);
 
             // Get token settings
             var tokenSettings = configuration.GetSection(sectionName).Get<TokenSettings>();

@@ -19,7 +19,7 @@ namespace BaseNetCore.Core.Examples
 
             // Add automatic model validation with ApiErrorResponse format
             // Returns: { guid, code, message, path, method, timestamp, errors }
-            builder.Services.AddAutomaticModelValidation();
+            builder.Services.AddBaseAutomaticModelValidation();
 
             var app = builder.Build();
             app.Run();
@@ -35,7 +35,7 @@ namespace BaseNetCore.Core.Examples
 
             // Add model validation with exception
             // Throws RequestInvalidException which is handled by GlobalExceptionMiddleware
-            builder.Services.AddModelValidationWithException();
+            builder.Services.AddBaseModelValidationWithException();
 
             // Don't forget to add GlobalExceptionMiddleware
             var app = builder.Build();

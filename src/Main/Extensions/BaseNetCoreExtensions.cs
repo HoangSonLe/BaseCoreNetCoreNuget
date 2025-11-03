@@ -1,3 +1,4 @@
+using BaseNetCore.Core.src.Main.Cache;
 using BaseNetCore.Core.src.Main.GlobalMiddleware;
 using BaseNetCore.Core.src.Main.Security.Algorithm;
 using BaseNetCore.Core.src.Main.Security.Token;
@@ -5,8 +6,6 @@ using BaseNetCore.Core.src.Main.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -29,7 +28,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
             if (services is null) throw new ArgumentNullException(nameof(services));
 
             // Add automatic model validation with ApiErrorResponse format (recommended)
-            services.AddAutomaticModelValidation();
+            services.AddBaseAutomaticModelValidation();
             services.AddBaseServiceDependencies();
             services.AddAesAlgorithmConfiguration(configuration);
 
@@ -51,21 +50,26 @@ namespace BaseNetCore.Core.src.Main.Extensions
         public static IMvcBuilder AddBaseNetCoreFeaturesWithAuth(
             this IServiceCollection services,
             IConfiguration configuration,
-            string tokenSettingsSectionName = "TokenSettings")
+            string tokenSettingsSectionName = "TokenSettings", bool isUseMemoryCache = true)
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
             if (configuration is null) throw new ArgumentNullException(nameof(configuration));
             if (string.IsNullOrWhiteSpace(tokenSettingsSectionName)) throw new ArgumentException("Token settings section name must be provided.", nameof(tokenSettingsSectionName));
 
             // Add JWT authentication
-            services.AddJwtAuthentication(configuration, tokenSettingsSectionName);
+            services.AddBaseJwtAuthentication(configuration, tokenSettingsSectionName);
 
             // Auto-register application-provided ITokenValidator (if any implementation exists in loaded assemblies)
             //services.AddAutoRegisterTokenValidator();
             DIUntils.AddAutoRegisterDI<ITokenValidator>(services);
 
             // Add memory cache for token-related caching scenarios
-            services.AddMemoryCache();
+            if (isUseMemoryCache)
+            {
+                services.AddMemoryCache();
+                services.AddSingleton<ICacheService, MemoryCacheService>();
+            }
+
 
             // Add base features
             return services.AddBaseNetCoreFeatures(configuration);
@@ -114,41 +118,6 @@ namespace BaseNetCore.Core.src.Main.Extensions
             if (services is null) throw new ArgumentNullException(nameof(services));
 
             services.AddHttpContextAccessor();
-            return services;
-        }
-        /// <summary>
-        /// Scans loaded assemblies and auto-registers the first concrete implementation of ITokenValidator.
-        /// This allows the Application layer to implement ITokenValidator and have it picked up automatically
-        /// without explicit registrations in Program.cs.
-        /// </summary>
-        /// <param name="services">Service collection</param>
-        /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddAutoRegisterTokenValidator(this IServiceCollection services)
-        {
-            if (services is null) throw new ArgumentNullException(nameof(services));
-
-            var interfaceType = typeof(ITokenValidator);
-
-            // Helper to avoid ReflectionTypeLoadException
-            static Type[] GetLoadableTypes(Assembly assembly)
-            {
-                try { return assembly.GetTypes(); }
-                catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null)!.ToArray(); }
-            }
-
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            var implType = assemblies
-                .SelectMany(GetLoadableTypes)
-                .Where(t => t is not null && t.IsClass && !t.IsAbstract && interfaceType.IsAssignableFrom(t))
-                .FirstOrDefault();
-
-            if (implType != null)
-            {
-                // Register only if no existing registration for the interface
-                services.TryAddScoped(interfaceType, implType);
-            }
-
             return services;
         }
         /// <summary>

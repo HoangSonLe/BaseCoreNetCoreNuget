@@ -15,7 +15,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// </summary>
         /// <param name="services">The service collection to add the services to.</param>
         /// <returns>The updated service collection.</returns>
-        public static IServiceCollection AddCoreDynamicAuthorization(this IServiceCollection services)
+        public static IServiceCollection AddBaseCoreDynamicAuthorization(this IServiceCollection services)
         {
             // Provider for dynamic rules (defaults to IConfiguration-based provider)
             services.AddSingleton<IDynamicPermissionProvider, DefaultDynamicPermissionProvider>();
@@ -29,7 +29,7 @@ namespace BaseNetCore.Core.src.Main.Extensions
             return services;
         }
 
-        public static IApplicationBuilder UseCoreDynamicPermissionMiddleware(this IApplicationBuilder app)
+        public static IApplicationBuilder UseBaseCoreDynamicPermissionMiddleware(this IApplicationBuilder app)
         {
             // Ensure app.UseAuthentication() is called before this middleware in Program.cs
             return app.UseMiddleware<DynamicPermissionMiddleware>();
