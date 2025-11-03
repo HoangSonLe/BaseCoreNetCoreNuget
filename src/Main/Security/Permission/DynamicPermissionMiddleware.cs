@@ -8,21 +8,27 @@ using System.Text.Json;
 
 namespace BaseNetCore.Core.src.Main.Security.Permission
 {
+    /// <summary>
+    /// Enterprise-grade Dynamic Permission Middleware
+    /// Optimized to reuse HttpContext scope instead of creating new scope
+    /// </summary>
     public class DynamicPermissionMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly IDynamicPermissionProvider _provider;
         private readonly ILogger<DynamicPermissionMiddleware> _logger;
-        private readonly IServiceProvider _serviceProvider;
-        public DynamicPermissionMiddleware(RequestDelegate next, IDynamicPermissionProvider provider,
-            IServiceProvider serviceProvider,
+
+        // OPTIMIZATION: Remove IServiceProvider injection - use HttpContext.RequestServices
+        public DynamicPermissionMiddleware(
+            RequestDelegate next,
+            IDynamicPermissionProvider provider,
             ILogger<DynamicPermissionMiddleware> logger)
         {
             _next = next;
             _provider = provider;
-            _serviceProvider = serviceProvider;
             _logger = logger;
         }
+
         public async Task InvokeAsync(HttpContext context)
         {
             // If the endpoint is marked with [AllowAnonymous], skip permission checks entirely.
@@ -35,33 +41,37 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
 
             var path = context.Request.Path.Value ?? "/";
             var method = context.Request.Method.ToUpperInvariant();
+
+            // Check PermitAll first (fast path)
             var permitAll = await _provider.GetPermitAllAsync();
             if (permitAll.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)))
             {
                 await _next(context);
                 return;
             }
+
+            // Find matching rule
             var rules = await _provider.GetRulesAsync();
             var rule = rules.FirstOrDefault(r => r.HttpMethod == method && r.PathRegex.IsMatch(path));
+
             if (rule == null)
             {
-                // No dynamic rule -> continue (choose default-deny if you prefer)
-                //await _next(context);
-
-                _logger.LogError("IUserPermissionService not registered in DI container");
+                // No dynamic rule -> deny access
+                _logger.LogWarning("No permission rule found for {Method} {Path}", method, path);
                 await WriteError(context, StatusCodes.Status403Forbidden, CoreErrorCodes.FORBIDDEN);
-
                 return;
             }
-            if (!context.User.Identity?.IsAuthenticated ?? false)
+
+            // Check authentication
+            if (context.User.Identity?.IsAuthenticated != true)
             {
                 await WriteError(context, StatusCodes.Status401Unauthorized, CoreErrorCodes.SYSTEM_AUTHORIZATION);
                 return;
             }
 
-            using var scope = _serviceProvider.CreateScope();
-            var _userPermissionService = scope.ServiceProvider.GetService<IUserPermissionService>();
-            if (_userPermissionService == null)
+            // OPTIMIZATION: Reuse HttpContext scope instead of creating new one
+            var userPermissionService = context.RequestServices.GetService<IUserPermissionService>();
+            if (userPermissionService == null)
             {
                 _logger.LogError("IUserPermissionService not registered in DI container");
                 await WriteError(context, StatusCodes.Status500InternalServerError, CoreErrorCodes.SYSTEM_ERROR, "Internal server error");
@@ -69,29 +79,41 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
             }
 
             var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var userPerms = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId))
             {
-                var perms = await _userPermissionService.GetPermissionsAsync(userId);
-                foreach (var p in perms) userPerms.Add(p);
+                _logger.LogWarning("User ID not found in claims");
+                await WriteError(context, StatusCodes.Status401Unauthorized, CoreErrorCodes.SYSTEM_AUTHORIZATION);
+                return;
             }
 
-            var ok = rule.RequiredPermissions.Count == 0 || rule.RequiredPermissions.Any(rp => userPerms.Contains(rp));
-            if (!ok)
+            // OPTIMIZATION: Use HashSet with case-insensitive comparer from start
+            var userPerms = await userPermissionService.GetPermissionsAsync(userId);
+            var userPermSet = new HashSet<string>(userPerms, StringComparer.OrdinalIgnoreCase);
+
+            // Check permissions
+            var hasPermission = rule.RequiredPermissions.Count == 0 || rule.RequiredPermissions.Any(rp => userPermSet.Contains(rp));
+
+            if (!hasPermission)
             {
-                _logger.LogInformation("Authorization failed for {Path} {Method}. Required: {Req}, UserPerms: {UserPerms}", path, method, string.Join(",", rule.RequiredPermissions), string.Join(",", userPerms));
+                if (_logger.IsEnabled(LogLevel.Information))
+                {
+                    _logger.LogInformation(
+                        "Authorization failed for {Path} {Method}. Required: {Required}, UserPerms: {UserPerms}",
+                        path, method, string.Join(",", rule.RequiredPermissions), string.Join(",", userPerms));
+                }
+
                 await WriteError(context, StatusCodes.Status403Forbidden, CoreErrorCodes.FORBIDDEN);
                 return;
             }
 
             await _next(context);
-
         }
 
         private static Task WriteError(HttpContext context, int status, CoreErrorCodes code, string? message = null)
         {
             context.Response.StatusCode = status;
             context.Response.ContentType = "application/json";
+
             var payload = new ApiErrorResponse
             {
                 Guid = context.TraceIdentifier,
@@ -101,9 +123,22 @@ namespace BaseNetCore.Core.src.Main.Security.Permission
                 Method = context.Request.Method,
                 Timestamp = DateTime.UtcNow
             };
-            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-            var json = JsonSerializer.Serialize(payload, options);
+
+            // OPTIMIZATION: Use pre-configured JsonSerializerOptions
+            var json = JsonSerializer.Serialize(payload, JsonSerializerOptionsCache.CamelCase);
             return context.Response.WriteAsync(json);
         }
+    }
+
+    /// <summary>
+    /// Cache JsonSerializerOptions to avoid recreation
+    /// </summary>
+    internal static class JsonSerializerOptionsCache
+    {
+        public static readonly JsonSerializerOptions CamelCase = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultBufferSize = 1024 // Reduce allocation
+        };
     }
 }

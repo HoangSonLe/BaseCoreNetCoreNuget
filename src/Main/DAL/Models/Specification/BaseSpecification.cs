@@ -6,13 +6,7 @@ namespace BaseNetCore.Core.src.Main.DAL.Models.Specification
     /// Base specification implementation with Fluent API support
     /// Enterprise pattern used by major companies
     /// Supports both Inheritance Pattern and Fluent API Pattern
-    /// </summary>
-    /// <typeparam name="T">Entity type</typeparam>
-    /// <summary>
-    /// Base specification implementation with Fluent API support
-    /// Can be used directly or inherited for named specifications
-    /// Enterprise pattern used by major companies
-    /// Supports both Inheritance Pattern and Fluent API Pattern
+    /// OPTIMIZED: Uses PredicateBuilder for efficient expression combining
     /// </summary>
     /// <typeparam name="T">Entity type</typeparam>
     public class BaseSpecification<T> : ISpecification<T>
@@ -51,6 +45,7 @@ namespace BaseNetCore.Core.src.Main.DAL.Models.Specification
 
         /// <summary>
         /// Add additional criteria with AND logic
+        /// OPTIMIZED: Uses PredicateBuilder for efficient SQL translation
         /// Combines with existing criteria using AND operator
         /// </summary>
         /// <param name="criteria">Additional filter expression</param>
@@ -63,19 +58,15 @@ namespace BaseNetCore.Core.src.Main.DAL.Models.Specification
             }
             else
             {
-                // Combine existing criteria with new criteria using AND
-                var parameter = Expression.Parameter(typeof(T), "x");
-                var combined = Expression.AndAlso(
-                   Expression.Invoke(Criteria, parameter),
-                  Expression.Invoke(criteria, parameter)
-            );
-                Criteria = Expression.Lambda<Func<T, bool>>(combined, parameter);
+                // OPTIMIZATION: Use PredicateBuilder instead of Expression.Invoke
+                Criteria = Criteria.And(criteria);
             }
             return this;
         }
 
         /// <summary>
         /// Add additional criteria with OR logic
+        /// OPTIMIZED: Uses PredicateBuilder for efficient SQL translation
         /// Combines with existing criteria using OR operator
         /// </summary>
         /// <param name="criteria">Additional filter expression</param>
@@ -88,13 +79,8 @@ namespace BaseNetCore.Core.src.Main.DAL.Models.Specification
             }
             else
             {
-                // Combine existing criteria with new criteria using OR
-                var parameter = Expression.Parameter(typeof(T), "x");
-                var combined = Expression.OrElse(
-              Expression.Invoke(Criteria, parameter),
-                 Expression.Invoke(criteria, parameter)
-               );
-                Criteria = Expression.Lambda<Func<T, bool>>(combined, parameter);
+                // OPTIMIZATION: Use PredicateBuilder instead of Expression.Invoke
+                Criteria = Criteria.Or(criteria);
             }
             return this;
         }

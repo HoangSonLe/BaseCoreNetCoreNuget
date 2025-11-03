@@ -1,5 +1,6 @@
 ﻿using BaseNetCore.Core.src.Main.Security.RateLimited;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.RateLimiting;
@@ -9,7 +10,8 @@ namespace BaseNetCore.Core.src.Main.Extensions
     public static class RateLimitingExtensions
     {
         /// <summary>
-        /// Đăng ký Rate Limiting với options mặc định hoặc từ Configuration (optional)
+        /// Đăng ký Rate Limiting với PartitionedRateLimiter (Enterprise-grade)
+        /// Sử dụng partitioning để tránh memory leak và improve performance
         /// </summary>
         public static IServiceCollection AddBaseRateLimiting(
             this IServiceCollection services,
@@ -35,8 +37,12 @@ namespace BaseNetCore.Core.src.Main.Extensions
             // Đăng ký options
             services.AddSingleton(options);
 
-            // Tạo và đăng ký RateLimiter
-            services.AddSingleton<RateLimiter>(sp => CreateRateLimiter(options));
+            // Tạo và đăng ký PartitionedRateLimiter - ENTERPRISE OPTIMIZATION
+            services.AddSingleton<PartitionedRateLimiter<HttpContext>>(sp =>
+            {
+                var opts = sp.GetRequiredService<RateLimitOptions>();
+                return CreatePartitionedRateLimiter(opts);
+            });
 
             return services;
         }
@@ -46,41 +52,85 @@ namespace BaseNetCore.Core.src.Main.Extensions
             return app.UseMiddleware<RateLimitingMiddleware>();
         }
 
-        private static RateLimiter CreateRateLimiter(RateLimitOptions options)
+        /// <summary>
+        /// Tạo PartitionedRateLimiter với automatic cleanup và memory optimization
+        /// </summary>
+        private static PartitionedRateLimiter<HttpContext> CreatePartitionedRateLimiter(RateLimitOptions options)
         {
-            return options.Type switch
+            return PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-                RateLimitType.Fixed => new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = options.PermitLimit,
-                    Window = TimeSpan.FromSeconds(options.WindowSeconds),
-                    QueueLimit = options.QueueLimit
-                }),
+                // Extract identifier from context
+                var identifier = GetIdentifier(context);
 
-                RateLimitType.Sliding => new SlidingWindowRateLimiter(new SlidingWindowRateLimiterOptions
+                // Create partition based on rate limit type
+                return options.Type switch
                 {
-                    PermitLimit = options.PermitLimit,
-                    Window = TimeSpan.FromSeconds(options.WindowSeconds),
-                    SegmentsPerWindow = 10,
-                    QueueLimit = options.QueueLimit
-                }),
+                    RateLimitType.Fixed => RateLimitPartition.GetFixedWindowLimiter(identifier, _ =>
+                        new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = options.PermitLimit,
+                            Window = TimeSpan.FromSeconds(options.WindowSeconds),
+                            QueueLimit = options.QueueLimit,
+                            AutoReplenishment = true
+                        }),
 
-                RateLimitType.TokenBucket => new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+                    RateLimitType.Sliding => RateLimitPartition.GetSlidingWindowLimiter(identifier, _ =>
+                        new SlidingWindowRateLimiterOptions
+                        {
+                            PermitLimit = options.PermitLimit,
+                            Window = TimeSpan.FromSeconds(options.WindowSeconds),
+                            SegmentsPerWindow = 10,
+                            QueueLimit = options.QueueLimit,
+                            AutoReplenishment = true
+                        }),
+
+                    RateLimitType.TokenBucket => RateLimitPartition.GetTokenBucketLimiter(identifier, _ =>
+                        new TokenBucketRateLimiterOptions
+                        {
+                            TokenLimit = options.PermitLimit,
+                            ReplenishmentPeriod = TimeSpan.FromSeconds(options.WindowSeconds),
+                            TokensPerPeriod = options.PermitLimit,
+                            QueueLimit = options.QueueLimit,
+                            AutoReplenishment = true
+                        }),
+
+                    RateLimitType.Concurrency => RateLimitPartition.GetConcurrencyLimiter(identifier, _ =>
+                        new ConcurrencyLimiterOptions
+                        {
+                            PermitLimit = options.PermitLimit,
+                            QueueLimit = options.QueueLimit
+                        }),
+
+                    _ => throw new ArgumentException($"Unsupported rate limit type: {options.Type}")
+                };
+            });
+        }
+
+        /// <summary>
+        /// Extract identifier từ HttpContext (User ID hoặc IP Address)
+        /// PERFORMANCE: Reuse logic từ middleware để consistent
+        /// </summary>
+        private static string GetIdentifier(HttpContext context)
+        {
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                // Sử dụng user ID làm identifier nếu user đã authenticate
+                var userId = context.User.FindFirst("sub")?.Value
+                   ?? context.User.FindFirst("userId")?.Value
+                   ?? context.User.Identity.Name;
+
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    TokenLimit = options.PermitLimit,
-                    ReplenishmentPeriod = TimeSpan.FromSeconds(options.WindowSeconds),
-                    TokensPerPeriod = options.PermitLimit,
-                    QueueLimit = options.QueueLimit
-                }),
+                    return $"user:{userId}";
+                }
+            }
 
-                RateLimitType.Concurrency => new ConcurrencyLimiter(new ConcurrencyLimiterOptions
-                {
-                    PermitLimit = options.PermitLimit,
-                    QueueLimit = options.QueueLimit
-                }),
+            // Sử dụng IP của client làm identifier
+            var ipAddress = context.Connection.RemoteIpAddress?.ToString()
+             ?? context.Request.Headers["X-Forwarded-For"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim()
+                    ?? "unknown";
 
-                _ => throw new ArgumentException($"Unsupported rate limit type: {options.Type}")
-            };
+            return $"ip:{ipAddress}";
         }
     }
 }
