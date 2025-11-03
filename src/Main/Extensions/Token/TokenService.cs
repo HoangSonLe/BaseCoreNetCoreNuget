@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 
-namespace BaseNetCore.Core.src.Main.Security.Token
+namespace BaseNetCore.Core.src.Main.Extensions.Token
 {
     /// <summary>
     /// Service for generating and validating JWT tokens using RSA algorithm.

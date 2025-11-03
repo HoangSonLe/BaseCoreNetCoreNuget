@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace BaseNetCore.Core.src.Main.Common.Options
+namespace BaseNetCore.Core.src.Main.Extensions.Performance
 {
     /// <summary>
     /// Performance optimization configuration options

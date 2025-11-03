@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Threading.RateLimiting;
 
-namespace BaseNetCore.Core.src.Main.Security.RateLimited
+namespace BaseNetCore.Core.src.Main.Extensions.RateLimited
 {
     /// <summary>
     /// Enterprise-grade Rate Limiting Middleware with PartitionedRateLimiter

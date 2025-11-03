@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BaseNetCore.Core.src.Main.Security.Token
+namespace BaseNetCore.Core.src.Main.Extensions.Token
 {
     /// <summary>
     /// Configuration settings for JWT token generation and validation.

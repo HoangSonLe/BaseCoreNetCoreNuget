@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
-namespace BaseNetCore.Core.src.Main.Security.Token
+namespace BaseNetCore.Core.src.Main.Extensions.Token
 {
     /// <summary>
     /// Contract for application-provided token validation (DB checks, revocation, user status, etc.).

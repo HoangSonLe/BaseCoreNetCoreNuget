@@ -1,6 +1,5 @@
 using BaseNetCore.Core.src.Main.Common.Contants;
 using BaseNetCore.Core.src.Main.Common.Models;
-using BaseNetCore.Core.src.Main.Security.Token;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +10,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace BaseNetCore.Core.src.Main.Extensions
+namespace BaseNetCore.Core.src.Main.Extensions.Token
 {
     /// <summary>
     /// Extension methods for configuring JWT authentication and token services.

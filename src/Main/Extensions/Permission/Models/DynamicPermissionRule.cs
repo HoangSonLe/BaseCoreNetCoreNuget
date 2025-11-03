@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace BaseNetCore.Core.src.Main.Security.Permission.Models
+namespace BaseNetCore.Core.src.Main.Extensions.Permission.Models
 {
     public sealed class DynamicPermissionRule
     {

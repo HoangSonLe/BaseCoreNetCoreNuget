@@ -1,4 +1,4 @@
-﻿namespace BaseNetCore.Core.src.Main.Security.Permission
+﻿namespace BaseNetCore.Core.src.Main.Extensions.Permission
 {
     public interface ICorePermissionService
     {

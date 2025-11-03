@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace BaseNetCore.Core.src.Main.Security.Permission
+namespace BaseNetCore.Core.src.Main.Extensions.Permission
 {
     /// <summary>
     /// Enterprise-grade Dynamic Permission Middleware

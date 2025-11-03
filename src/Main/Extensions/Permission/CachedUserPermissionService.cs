@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace BaseNetCore.Core.src.Main.Security.Permission
+namespace BaseNetCore.Core.src.Main.Extensions.Permission
 {
     /// <summary>
     /// Enterprise-grade Cached User Permission Service

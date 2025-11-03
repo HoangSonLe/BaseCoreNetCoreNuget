@@ -1,4 +1,4 @@
-﻿namespace BaseNetCore.Core.src.Main.Security.RateLimited
+﻿namespace BaseNetCore.Core.src.Main.Extensions.RateLimited
 {
     public class RateLimitOptions
     {

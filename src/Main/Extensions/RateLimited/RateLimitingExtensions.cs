@@ -1,11 +1,10 @@
-﻿using BaseNetCore.Core.src.Main.Security.RateLimited;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.RateLimiting;
 
-namespace BaseNetCore.Core.src.Main.Extensions
+namespace BaseNetCore.Core.src.Main.Extensions.RateLimited
 {
     public static class RateLimitingExtensions
     {

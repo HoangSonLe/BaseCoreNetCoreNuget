@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace BaseNetCore.Core.src.Main.Security.Token
+namespace BaseNetCore.Core.src.Main.Extensions.Token
 {
     /// <summary>
     /// Interface for JWT token generation and validation service.

@@ -1,10 +1,10 @@
-﻿using BaseNetCore.Core.src.Main.Security.Permission.Models;
+﻿using BaseNetCore.Core.src.Main.Extensions.Permission.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
-namespace BaseNetCore.Core.src.Main.Security.Permission
+namespace BaseNetCore.Core.src.Main.Extensions.Permission
 {
     /// <summary>
     /// Enterprise-grade Dynamic Permission Provider with Regex caching

@@ -1,7 +1,7 @@
 using BaseNetCore.Core.src.Main.Cache;
+using BaseNetCore.Core.src.Main.Extensions.Token;
 using BaseNetCore.Core.src.Main.GlobalMiddleware;
 using BaseNetCore.Core.src.Main.Security.Algorithm;
-using BaseNetCore.Core.src.Main.Security.Token;
 using BaseNetCore.Core.src.Main.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

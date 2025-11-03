@@ -1,4 +1,4 @@
-﻿namespace BaseNetCore.Core.src.Main.Common.Options
+﻿namespace BaseNetCore.Core.src.Main.Extensions.Performance
 {
     /// <summary>
     /// Kestrel server limits configuration

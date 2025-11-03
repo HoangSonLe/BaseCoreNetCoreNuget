@@ -1,9 +1,8 @@
-﻿using BaseNetCore.Core.src.Main.Security.Permission;
-using BaseNetCore.Core.src.Main.Utils;
+﻿using BaseNetCore.Core.src.Main.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BaseNetCore.Core.src.Main.Extensions
+namespace BaseNetCore.Core.src.Main.Extensions.Permission
 {
     /// <summary>
     /// Provides extension methods for registering dynamic authorization services in the dependency injection container.
