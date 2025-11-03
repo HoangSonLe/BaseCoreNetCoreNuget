@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace BaseNetCore.Core.src.Main.DAL.Repository
 {
@@ -18,4 +19,9 @@ namespace BaseNetCore.Core.src.Main.DAL.Repository
         Task CommitTransactionAsync(CancellationToken cancellationToken = default);
         Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
     }
+    public interface IUnitOfWork<TContext> : IUnitOfWork where TContext : DbContext
+    {
+        TContext Context { get; }
+    }
 }
+

@@ -14,6 +14,7 @@ namespace BaseNetCore.Core.src.Main.DAL.Repository
     {
         private readonly DbContext _context;
         private IDbContextTransaction _transaction;
+        public DbContext Context => _context;
 
         // Dictionary để cache các repository instances
         private readonly Dictionary<Type, object> _repositories;
@@ -115,6 +116,14 @@ namespace BaseNetCore.Core.src.Main.DAL.Repository
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+    }
+    public class UnitOfWork<TContext> : UnitOfWork, IUnitOfWork<TContext> where TContext : DbContext
+    {
+        public new TContext Context => (TContext)base.Context;
+
+        public UnitOfWork(TContext context) : base(context)
+        {
         }
     }
 }
