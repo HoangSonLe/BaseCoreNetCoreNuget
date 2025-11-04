@@ -16,6 +16,7 @@ namespace BaseNetCore.Core.src.Main.Cache
         public MemoryCacheService(IMemoryCache memoryCache, ILogger<MemoryCacheService> logger)
         {
             _memoryCache = memoryCache;
+            _logger = logger;
         }
 
 

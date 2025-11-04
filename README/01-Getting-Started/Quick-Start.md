@@ -26,6 +26,7 @@ Hướng dẫn này sẽ giúp bạn tạo một Web API hoàn chỉnh với **B
 - ? Auto Model Validation
 - ? Vietnamese Search Support
 - ? Swagger UI
+- ???? Serilog Structured Logging
 
 ---
 
@@ -151,22 +152,25 @@ using MyApp.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add DbContext
+// 1. Add Serilog (Optional but recommended)
+builder.AddBaseNetCoreSerilog();
+
+// 2. Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Add BaseNetCore features with JWT authentication
-//    Bao g?m: JWT Auth, Model Validation, AES Encryption, Controllers
+// 3. Add BaseNetCore features with JWT authentication
+//    Bao gồm: JWT Auth, Model Validation, AES Encryption, Controllers
 builder.Services.AddBaseNetCoreFeaturesWithAuth(builder.Configuration);
 
-// 3. Register Unit of Work (generic)
+// 4. Register Unit of Work (generic)
 builder.Services.AddScoped<IUnitOfWork>(provider =>
 {
     var dbContext = provider.GetRequiredService<ApplicationDbContext>();
     return new UnitOfWork(dbContext);
 });
 
-// 4. Add Swagger/OpenAPI
+// 5. Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -210,12 +214,20 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// 5. Add BaseNetCore middleware (Exception + Auth + Authorization)
+// 6. Add BaseNetCore middleware (Serilog Request Logging + Exception + Auth + Authorization)
 app.UseBaseNetCoreMiddlewareWithAuth();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    app.Run();
+}
+finally
+{
+    // Ensure Serilog logs are flushed on shutdown
+    app.FlushBaseNetCoreSerilog();
+}
 ```
 
 ---

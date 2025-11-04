@@ -129,6 +129,25 @@ public class RequestResponseLoggingMiddleware
 }
 ```
 
+### 4. Correlation ID Middleware (Built-in)
+
+BaseNetCore.Core bao g?m CorrelationIdMiddleware ?? tracking requests:
+
+```csharp
+// Add to middleware pipeline
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+// All logs will include CorrelationId
+// Response headers will include X-Correlation-ID for client tracking
+```
+
+**Log output:**
+```
+[14:30:45 INF] Processing request {CorrelationId="abc-123-def-456"}
+[14:30:45 INF] Database query executed {CorrelationId="abc-123-def-456"}
+[14:30:45 INF] Request completed {CorrelationId="abc-123-def-456"}
+```
+
 ---
 
 **[? Back to Documentation](../README.md)**

@@ -6,19 +6,23 @@ BaseNetCore.Core middleware pipeline:
 
 ```
 Request
-  ?
+  │
+CorrelationIdMiddleware (X-Correlation-ID)
+  │
+SerilogRequestLogging (Optional - if Serilog configured)
+  │
 GlobalExceptionMiddleware
-  ?
+  │
 UseRouting
-  ?
+  │
 UseAuthentication (JWT)
-  ?
+  │
 UseAuthorization
-  ?
+  │
 DynamicPermissionMiddleware (Optional)
-  ?
+  │
 Controllers
-  ?
+  │
 Response
 ```
 
@@ -33,6 +37,8 @@ var app = builder.Build();
 
 app.UseBaseNetCoreMiddlewareWithAuth();
 // Includes:
+// - CorrelationIdMiddleware (X-Correlation-ID tracking)
+// - SerilogRequestLogging (if Serilog configured)
 // - GlobalExceptionMiddleware
 // - UseAuthentication
 // - UseAuthorization
@@ -47,6 +53,8 @@ var app = builder.Build();
 
 app.UseBaseNetCoreMiddleware();
 // Includes:
+// - CorrelationIdMiddleware (X-Correlation-ID tracking)
+// - SerilogRequestLogging (if Serilog configured)
 // - GlobalExceptionMiddleware only
 
 app.MapControllers();
@@ -57,6 +65,8 @@ app.MapControllers();
 ```csharp
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>(); // Optional but recommended
+app.UseSerilogRequestLogging(); // Optional - if using Serilog
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseRouting();
 app.UseAuthentication();
@@ -70,19 +80,21 @@ app.MapControllers();
 
 ## Middleware Order
 
-?? **Order matters!**
+⚠️ **Order matters!**
 
 ```csharp
-// ? CORRECT
-app.UseMiddleware<GlobalExceptionMiddleware>();  // 1. First
-app.UseRouting();  // 2.
-app.UseAuthentication();// 3.
-app.UseAuthorization();  // 4.
-app.UseMiddleware<DynamicPermissionMiddleware>();  // 5. After auth
+// ✅ CORRECT
+app.UseMiddleware<CorrelationIdMiddleware>();  // 1. First - for tracking
+app.UseSerilogRequestLogging();  // 2. Request logging (optional)
+app.UseMiddleware<GlobalExceptionMiddleware>();  // 3. Exception handling
+app.UseRouting();  // 4. Routing
+app.UseAuthentication();// 5. Authentication
+app.UseAuthorization();  // 6. Authorization
+app.UseMiddleware<DynamicPermissionMiddleware>();  // 7. After auth
 app.MapControllers();
 
-// ? WRONG
-app.UseAuthentication();  // ? Before routing
+// ❌ WRONG
+app.UseAuthentication();  // ❌ Before routing
 app.UseRouting();
 app.MapControllers();
 ```

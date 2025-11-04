@@ -361,12 +361,12 @@ public class MyService
     }
 
   public string EncryptSensitiveData(string plainText)
-    {
+  {
         return _aes.Encrypt(plainText);
     }
 
   public string DecryptSensitiveData(string cipherText)
-    {
+  {
  return _aes.Decrypt(cipherText);
     }
 }
@@ -449,7 +449,85 @@ app.UseMiddleware<DynamicPermissionMiddleware>();
 
 ## ?? Logging Configuration
 
-### Console + File Logging
+### Serilog (Recommended)
+
+BaseNetCore.Core hỗ trợ Serilog với zero configuration hoặc full customization.
+
+#### Option 1: Zero Configuration
+
+```csharp
+// Program.cs
+builder.AddBaseNetCoreSerilog(); // Works without appsettings.json
+```
+
+#### Option 2: Full Configuration
+
+```json
+{
+  "Serilog": {
+    "Using": ["Serilog.Sinks.Console", "Serilog.Sinks.File"],
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore": "Warning",
+        "Microsoft.EntityFrameworkCore": "Warning",
+        "System": "Warning",
+        "BaseNetCore.Core": "Debug"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/log-.txt",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30,
+          "fileSizeLimitBytes": 10485760,
+          "rollOnFileSizeLimit": true,
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+        }
+      }
+    ],
+    "Enrich": ["FromLogContext", "WithMachineName", "WithThreadId"],
+    "Properties": {
+      "Application": "MyApp"
+    }
+  }
+}
+```
+
+#### Logging Settings (Optional - for default configuration)
+
+Nếu không có section "Serilog", BaseNetCore sẽ dùng các settings này:
+
+```json
+{
+  "Logging": {
+    "FilePath": "logs/log-.txt",
+    "RetainedFileCountLimit": 30,
+    "FileSizeLimitBytes": 10485760,
+    "RollingInterval": "Day",
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  }
+}
+```
+
+**Chi tiết xem tại:** [Serilog Logging Guide](../10-Extensions/Serilog-Logging.md)
+
+### ASP.NET Core Default Logging
+
+Nếu không dùng Serilog:
 
 ```json
 {
@@ -460,47 +538,8 @@ app.UseMiddleware<DynamicPermissionMiddleware>();
       "Microsoft.Hosting.Lifetime": "Information",
       "Microsoft.EntityFrameworkCore": "Warning"
     }
-  },
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-"Microsoft": "Warning",
-  "System": "Warning"
-      }
-    },
-    "WriteTo": [
-      { "Name": "Console" },
-      {
-   "Name": "File",
-    "Args": {
-    "path": "logs/log-.txt",
-          "rollingInterval": "Day",
-          "retainedFileCountLimit": 30
-        }
-      }
-    ]
   }
 }
-```
-
-### Enable Serilog
-
-```bash
-dotnet add package Serilog.AspNetCore
-dotnet add package Serilog.Sinks.File
-```
-
-```csharp
-// Program.cs
-using Serilog;
-
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Host.UseSerilog((context, config) =>
-{
-    config.ReadFrom.Configuration(context.Configuration);
-});
 ```
 
 ---

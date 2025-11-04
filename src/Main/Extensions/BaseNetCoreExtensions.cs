@@ -6,6 +6,8 @@ using BaseNetCore.Core.src.Main.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.AspNetCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -20,12 +22,26 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// Adds all BaseNetCore features with recommended configuration:
         /// - Automatic model validation with ApiErrorResponse format
         /// - Controllers with JSON options
+        /// - Optional: Serilog logging
         /// </summary>
         /// <param name="services">Service collection</param>
+        /// <param name="configuration">Configuration</param>
+        /// <param name="builder">WebApplicationBuilder for Serilog configuration (optional)</param>
+        /// <param name="configureSerilog">Optional: Custom Serilog configuration</param>
         /// <returns>IMvcBuilder for further MVC configuration</returns>
-        public static IMvcBuilder AddBaseNetCoreFeatures(this IServiceCollection services, IConfiguration configuration)
+        public static IMvcBuilder AddBaseNetCoreFeatures(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            WebApplicationBuilder? builder = null,
+            Action<LoggerConfiguration>? configureSerilog = null)
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
+
+            // If WebApplicationBuilder is provided, configure Serilog
+            if (builder != null)
+            {
+                builder.AddBaseNetCoreSerilog(configureSerilog);
+            }
 
             // Add automatic model validation with ApiErrorResponse format (recommended)
             services.AddBaseAutomaticModelValidation();
@@ -42,25 +58,32 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// - JWT authentication and authorization
         /// - Automatic model validation with ApiErrorResponse format
         /// - Controllers with JSON options
+        /// - Optional: Serilog logging
         /// </summary>
         /// <param name="services">Service collection</param>
         /// <param name="configuration">Configuration containing TokenSettings</param>
         /// <param name="tokenSettingsSectionName">Section name for TokenSettings (default: "TokenSettings")</param>
+        /// <param name="isUseMemoryCache">Enable memory cache (default: true)</param>
+        /// <param name="builder">WebApplicationBuilder for Serilog configuration (optional)</param>
+        /// <param name="configureSerilog">Optional: Custom Serilog configuration</param>
         /// <returns>IMvcBuilder for further MVC configuration</returns>
         public static IMvcBuilder AddBaseNetCoreFeaturesWithAuth(
             this IServiceCollection services,
             IConfiguration configuration,
-            string tokenSettingsSectionName = "TokenSettings", bool isUseMemoryCache = true)
+            string tokenSettingsSectionName = "TokenSettings",
+            bool isUseMemoryCache = true,
+            WebApplicationBuilder? builder = null,
+            Action<LoggerConfiguration>? configureSerilog = null)
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
             if (configuration is null) throw new ArgumentNullException(nameof(configuration));
-            if (string.IsNullOrWhiteSpace(tokenSettingsSectionName)) throw new ArgumentException("Token settings section name must be provided.", nameof(tokenSettingsSectionName));
+            if (string.IsNullOrWhiteSpace(tokenSettingsSectionName))
+                throw new ArgumentException("Token settings section name must be provided.", nameof(tokenSettingsSectionName));
 
             // Add JWT authentication
             services.AddBaseJwtAuthentication(configuration, tokenSettingsSectionName);
 
             // Auto-register application-provided ITokenValidator (if any implementation exists in loaded assemblies)
-            //services.AddAutoRegisterTokenValidator();
             DIUntils.AddAutoRegisterDI<ITokenValidator>(services);
 
             // Add memory cache for token-related caching scenarios
@@ -70,9 +93,8 @@ namespace BaseNetCore.Core.src.Main.Extensions
                 services.AddSingleton<ICacheService, MemoryCacheService>();
             }
 
-
-            // Add base features
-            return services.AddBaseNetCoreFeatures(configuration);
+            // Add base features (with optional Serilog)
+            return services.AddBaseNetCoreFeatures(configuration, builder, configureSerilog);
         }
 
         /// <summary>
@@ -90,7 +112,8 @@ namespace BaseNetCore.Core.src.Main.Extensions
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
             if (configuration is null) throw new ArgumentNullException(nameof(configuration));
-            if (string.IsNullOrWhiteSpace(aesSettingsSectionName)) throw new ArgumentException("AES settings section name must be provided.", nameof(aesSettingsSectionName));
+            if (string.IsNullOrWhiteSpace(aesSettingsSectionName))
+                throw new ArgumentException("AES settings section name must be provided.", nameof(aesSettingsSectionName));
 
             // Bind settings so they are available via IOptions if needed elsewhere
             services.Configure<AesSettings>(configuration.GetSection(aesSettingsSectionName));
@@ -120,16 +143,31 @@ namespace BaseNetCore.Core.src.Main.Extensions
             services.AddHttpContextAccessor();
             return services;
         }
+
         /// <summary>
         /// Adds BaseNetCore middleware to the application pipeline.
         /// Includes:
+        /// - Correlation ID tracking (X-Correlation-ID header)
+        /// - Serilog request logging (if Serilog is configured)
         /// - Global exception handling middleware
         /// </summary>
         /// <param name="app">Application builder</param>
+        /// <param name="configureSerilogRequestLogging">Optional: Customize Serilog request logging options</param>
         /// <returns>Application builder for chaining</returns>
-        public static IApplicationBuilder UseBaseNetCoreMiddleware(this IApplicationBuilder app)
+        public static IApplicationBuilder UseBaseNetCoreMiddleware(
+            this IApplicationBuilder app,
+            Action<RequestLoggingOptions>? configureSerilogRequestLogging = null)
         {
             if (app is null) throw new ArgumentNullException(nameof(app));
+
+            // Add Correlation ID tracking
+            app.UseMiddleware<CorrelationIdMiddleware>();
+
+            // Add Serilog request logging if Serilog is configured
+            if (Log.Logger != null && Log.Logger != Serilog.Core.Logger.None)
+            {
+                app.UseBaseNetCoreSerilogRequestLogging(configureSerilogRequestLogging);
+            }
 
             // Add global exception handling
             app.UseMiddleware<GlobalExceptionMiddleware>();
@@ -140,16 +178,30 @@ namespace BaseNetCore.Core.src.Main.Extensions
         /// <summary>
         /// Adds complete BaseNetCore middleware pipeline with authentication.
         /// Includes:
+        /// - Correlation ID tracking (X-Correlation-ID header)
+        /// - Serilog request logging (if Serilog is configured)
         /// - Global exception handling
         /// - Authentication
         /// - Authorization
         /// Note: Should be called after UseRouting() and before UseEndpoints().
         /// </summary>
         /// <param name="app">Application builder</param>
+        /// <param name="configureSerilogRequestLogging">Optional: Customize Serilog request logging options</param>
         /// <returns>Application builder for chaining</returns>
-        public static IApplicationBuilder UseBaseNetCoreMiddlewareWithAuth(this IApplicationBuilder app)
+        public static IApplicationBuilder UseBaseNetCoreMiddlewareWithAuth(
+            this IApplicationBuilder app,
+            Action<RequestLoggingOptions>? configureSerilogRequestLogging = null)
         {
             if (app is null) throw new ArgumentNullException(nameof(app));
+
+            // Add Correlation ID tracking
+            app.UseMiddleware<CorrelationIdMiddleware>();
+
+            // Add Serilog request logging if Serilog is configured
+            if (Log.Logger != null && Log.Logger != Serilog.Core.Logger.None)
+            {
+                app.UseBaseNetCoreSerilogRequestLogging(configureSerilogRequestLogging);
+            }
 
             // Add global exception handling
             app.UseMiddleware<GlobalExceptionMiddleware>();
@@ -162,7 +214,10 @@ namespace BaseNetCore.Core.src.Main.Extensions
         }
 
         #region PRIVATE
-        // Private helper to centralize controller setup and JSON options to avoid duplication.
+
+        /// <summary>
+        /// Private helper to centralize controller setup and JSON options to avoid duplication.
+        /// </summary>
         private static IMvcBuilder ConfigureControllers(IServiceCollection services)
         {
             return services.AddControllers()

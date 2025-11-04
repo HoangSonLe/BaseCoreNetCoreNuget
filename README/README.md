@@ -87,6 +87,7 @@
 - ? **Dependency Injection** - Auto-registration support
 - ? **Base Services** - Common functionality cho services
 - ? **Comprehensive Examples** - Real-world scenarios
+- ???? **Serilog Integration** - Structured logging with zero configuration
 
 ---
 
@@ -140,6 +141,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Serilog (Optional but recommended)
+builder.AddBaseNetCoreSerilog();
+
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -166,12 +170,19 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// Add BaseNetCore middleware with authentication
+// Add BaseNetCore middleware with authentication (includes Serilog request logging)
 app.UseBaseNetCoreMiddlewareWithAuth();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    app.Run();
+}
+finally
+{
+    app.FlushBaseNetCoreSerilog();
+}
 ```
 
 ### 3?? Tạo Entity với Searchable Support
@@ -260,13 +271,14 @@ public ProductsController(ProductService productService)
 }
 ```
 
-? **Xong!** Bạn ?ã có:
+? **Xong!** Bạn đã có:
 - ? JWT Authentication
 - ? Global Exception Handling
 - ? Auto Model Validation
 - ? Repository Pattern
 - ? Vietnamese Search Support
 - ? Standardized API Responses
+- ???? Serilog Structured Logging
 
 ---
 
@@ -323,6 +335,7 @@ Tài li?u ???c t? ch?c theo modules ?? d? tìm ki?m:
 - [? BaseNetCore Extensions](10-Extensions/BaseNetCore-Extensions.md)
 - [?? Authentication Extensions](10-Extensions/Authentication-Extensions.md)
 - [?? Validation Extensions](10-Extensions/Validation-Extensions.md)
+- [?? Serilog Logging](10-Extensions/Serilog-Logging.md)
 
 ### ??? Utilities
 - [?? DI Utilities](11-Utilities/DI-Utilities.md)
