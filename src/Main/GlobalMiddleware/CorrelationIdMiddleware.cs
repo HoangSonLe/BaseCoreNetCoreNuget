@@ -25,7 +25,7 @@ namespace BaseNetCore.Core.src.Main.GlobalMiddleware
 
             // Store in HttpContext for access throughout the request
             context.Items["CorrelationId"] = correlationId;
-            
+
             // Add to response headers for client tracking
             context.Response.Headers[CorrelationIdHeader] = correlationId;
 
